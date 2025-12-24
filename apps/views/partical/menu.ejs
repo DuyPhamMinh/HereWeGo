@@ -19,6 +19,7 @@
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end rounded">
                                     <a href="/profile" class="dropdown-item"><i class="fas fa-user-alt me-2"></i> My Profile</a>
+                                    <a href="/booking/my-bookings" class="dropdown-item"><i class="fas fa-calendar-check me-2"></i> My Bookings</a>
                                     <% if (user.role === 'admin') { %>
                                     <a href="/admin" class="dropdown-item"><i class="fas fa-tachometer-alt me-2"></i> Admin Dashboard</a>
                                     <% } %>
@@ -57,10 +58,11 @@
                         <a href="/packages" class="nav-item nav-link<%= typeof activePage !== 'undefined' && activePage === 'packages' ? ' active' : '' %>">Packages</a>
                         <a href="/blog" class="nav-item nav-link<%= typeof activePage !== 'undefined' && activePage === 'blog' ? ' active' : '' %>">Blog</a>
                         <div class="nav-item dropdown">
-                            <a href="#" class="nav-link dropdown-toggle<%= typeof activePage !== 'undefined' && (activePage === 'destination' || activePage === 'tour' || activePage === 'gallery' || activePage === 'guides' || activePage === 'testimonial' || activePage === '404') ? ' active' : '' %>" data-bs-toggle="dropdown">Pages</a>
+                            <a href="#" class="nav-link dropdown-toggle<%= typeof activePage !== 'undefined' && (activePage === 'destination' || activePage === 'tour' || activePage === 'booking' || activePage === 'gallery' || activePage === 'guides' || activePage === 'testimonial' || activePage === '404') ? ' active' : '' %>" data-bs-toggle="dropdown">Pages</a>
                             <div class="dropdown-menu m-0">
                                 <a href="/destination" class="dropdown-item<%= typeof activePage !== 'undefined' && activePage === 'destination' ? ' active' : '' %>">Destination</a>
                                 <a href="/tour" class="dropdown-item<%= typeof activePage !== 'undefined' && activePage === 'tour' ? ' active' : '' %>">Explore Tour</a>
+                                <a href="/booking" class="dropdown-item<%= typeof activePage !== 'undefined' && activePage === 'booking' ? ' active' : '' %>">Travel Booking</a>
                                 <a href="/gallery" class="dropdown-item<%= typeof activePage !== 'undefined' && activePage === 'gallery' ? ' active' : '' %>">Our Gallery</a>
                                 <a href="/guides" class="dropdown-item<%= typeof activePage !== 'undefined' && activePage === 'guides' ? ' active' : '' %>">Travel Guides</a>
                                 <a href="/testimonial" class="dropdown-item<%= typeof activePage !== 'undefined' && activePage === 'testimonial' ? ' active' : '' %>">Testimonial</a>
@@ -69,6 +71,7 @@
                         </div>
                         <a href="/contact" class="nav-item nav-link<%= typeof activePage !== 'undefined' && activePage === 'contact' ? ' active' : '' %>">Contact</a>
                     </div>
+                    <a href="" class="btn btn-primary rounded-pill py-2 px-4 ms-lg-4">Book Now</a>
                 </div>
             </nav>
 <% if (typeof closeNavbarContainer === 'undefined' || closeNavbarContainer !== false) { %>

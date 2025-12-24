@@ -4,64 +4,49 @@ const tourSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, "Tour title is required"],
       trim: true,
+      default: "Untitled Tour",
     },
     description: {
       type: String,
-      required: [true, "Tour description is required"],
-      trim: true,
+      default: "",
     },
     shortDescription: {
       type: String,
-      trim: true,
     },
     destination: {
       type: String,
-      required: [true, "Destination is required"],
       trim: true,
+      default: "Unknown",
     },
     duration: {
       type: Number,
-      required: [true, "Duration is required"],
-      min: [1, "Duration must be at least 1 day"],
+      default: 1,
     },
     durationUnit: {
       type: String,
-      enum: ["days", "hours"],
+      trim: true,
       default: "days",
     },
     maxPersons: {
       type: Number,
-      default: 2,
-      min: [1, "Max persons must be at least 1"],
+      default: 10,
     },
     price: {
       type: Number,
-      required: [true, "Price is required"],
-      min: [0, "Price cannot be negative"],
+      default: 0,
     },
     discountPrice: {
       type: Number,
-      min: [0, "Discount price cannot be negative"],
     },
     image: {
       type: String,
       default: "/static/img/packages-1.jpg",
     },
-    images: [{
-      type: String,
-    }],
     category: {
       type: String,
-      enum: ["adventure", "beach", "cultural", "mountain", "city", "nature", "other"],
-      default: "other",
-    },
-    rating: {
-      type: Number,
-      default: 5,
-      min: [0, "Rating cannot be negative"],
-      max: [5, "Rating cannot exceed 5"],
+      trim: true,
+      default: "National",
     },
     isActive: {
       type: Boolean,
@@ -71,28 +56,28 @@ const tourSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    highlights: [{
-      type: String,
-    }],
-    itinerary: [{
-      day: Number,
-      title: String,
-      description: String,
-    }],
-    includes: [{
-      type: String,
-    }],
-    excludes: [{
-      type: String,
-    }],
+    highlights: [String],
+    includes: [String],
+    excludes: [String],
+    itinerary: [
+      {
+        day: { type: Number },
+        title: { type: String },
+        description: { type: String },
+      },
+    ],
+    rating: {
+      type: Number,
+      default: 5,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Index for search
-tourSchema.index({ title: 'text', description: 'text', destination: 'text' });
+// Add text index for search functionality
+tourSchema.index({ title: "text", description: "text", destination: "text", category: "text" });
 
 const Tour = mongoose.model("Tour", tourSchema);
 

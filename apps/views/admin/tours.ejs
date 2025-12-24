@@ -104,11 +104,11 @@
                                             <img src="<%= tour.image || '/static/img/packages-1.jpg' %>" alt="<%= tour.title %>" 
                                                  class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
                                         </td>
-                                        <td>
-                                            <div class="fw-bold"><%= tour.title %></div>
-                                            <small class="text-muted"><%= tour.shortDescription ? (tour.shortDescription.length > 50 ? tour.shortDescription.substring(0, 50) + '...' : tour.shortDescription) : '' %></small>
+                                        <td class="table-ellipsis" style="max-width: 200px;" title="<%= tour.title %>">
+                                            <div class="fw-bold text-truncate"><%= tour.title %></div>
+                                            <small class="text-muted d-block text-truncate"><%= tour.shortDescription ? (tour.shortDescription.length > 50 ? tour.shortDescription.substring(0, 50) + '...' : tour.shortDescription) : '' %></small>
                                         </td>
-                                        <td><%= tour.destination %></td>
+                                        <td class="table-ellipsis" style="max-width: 180px;" title="<%= tour.destination %>"><%= tour.destination %></td>
                                         <td><%= tour.duration %> <%= tour.durationUnit || 'days' %></td>
                                         <td>
                                             <% if (tour.discountPrice) { %>
