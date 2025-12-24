@@ -1,0 +1,48 @@
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+    <div class="container-fluid px-4">
+        <button class="btn btn-link d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="fa fa-bars"></i>
+        </button>
+        
+        <form class="d-none d-md-flex me-auto">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="fa fa-search"></i></span>
+                <input class="form-control border-start-0" type="search" placeholder="Search" aria-label="Search">
+            </div>
+        </form>
+        
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item dropdown">
+                <a class="nav-link position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                        3
+                    </span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="notificationsDropdown">
+                    <li><h6 class="dropdown-header">Notifications</h6></li>
+                    <li><a class="dropdown-item" href="#"><small>New booking received</small></a></li>
+                    <li><a class="dropdown-item" href="#"><small>Payment received</small></a></li>
+                    <li><a class="dropdown-item" href="#"><small>New user registered</small></a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-center" href="#">View all</a></li>
+                </ul>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="/static/admin/img/team/profile-picture-3.jpg" class="rounded-circle me-2" width="32" height="32" alt="User">
+                    <span class="d-none d-md-inline"><%= typeof user !== 'undefined' && user ? user.firstName + ' ' + user.lastName : 'Admin User' %></span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="userDropdown">
+                    <li><a class="dropdown-item" href="/admin/settings"><i class="fa fa-user me-2"></i> Profile</a></li>
+                    <li><a class="dropdown-item" href="/admin/settings"><i class="fa fa-cog me-2"></i> Settings</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/logout"><i class="fa fa-sign-out-alt me-2"></i> Logout</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+

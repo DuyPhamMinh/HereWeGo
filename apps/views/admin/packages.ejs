@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Packages - Admin Dashboard</title>
+    <%- include('partical/head'); %>
+</head>
+
+<body>
+    <div class="wrapper">
+        <%- include('partical/sidebar'); %>
+        <main class="main-content">
+            <%- include('partical/navbar'); %>
+
+            <div class="container-fluid px-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-4">
+                    <h1 class="h3 mb-0">Travel Packages</h1>
+                    <button type="button" class="btn btn-primary btn-sm">
+                        <i class="fa fa-plus me-2"></i>Add Package
+                    </button>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 col-md-6 col-lg-4 mb-4">
+                        <div class="card">
+                            <img src="/static/img/packages-1.jpg" class="card-img-top" alt="Package" style="height: 200px; object-fit: cover;">
+                            <div class="card-body">
+                                <h5 class="card-title">Venice - Italy</h5>
+                                <p class="card-text text-muted">3 days, 2 Person</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h4 class="mb-0 text-primary">$349.00</h4>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4 mb-4">
+                        <div class="card">
+                            <img src="/static/img/packages-2.jpg" class="card-img-top" alt="Package" style="height: 200px; object-fit: cover;">
+                            <div class="card-body">
+                                <h5 class="card-title">The New California</h5>
+                                <p class="card-text text-muted">3 days, 2 Person</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h4 class="mb-0 text-primary">$449.00</h4>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4 mb-4">
+                        <div class="card">
+                            <img src="/static/img/packages-3.jpg" class="card-img-top" alt="Package" style="height: 200px; object-fit: cover;">
+                            <div class="card-body">
+                                <h5 class="card-title">Discover Japan</h5>
+                                <p class="card-text text-muted">3 days, 2 Person</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h4 class="mb-0 text-primary">$549.00</h4>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/admin/js/admin.js"></script>
+</body>
+
+</html>
+
+

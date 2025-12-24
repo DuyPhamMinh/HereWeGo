@@ -1,0 +1,60 @@
+<!-- Sidebar -->
+<nav id="sidebarMenu" class="sidebar d-md-block bg-primary text-white collapse">
+    <div class="position-sticky pt-3">
+        <div class="sidebar-sticky">
+            <div class="sidebar-brand d-flex align-items-center justify-content-center mb-4">
+                <a href="/admin" class="text-white text-decoration-none">
+                    <h4 class="mb-0"><i class="fa fa-map-marker-alt me-2"></i>HereWeGo Admin</h4>
+                </a>
+            </div>
+            
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? ' active' : '' %>" href="/admin">
+                        <i class="fa fa-chart-pie me-2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'transactions' ? ' active' : '' %>" href="/admin/transactions">
+                        <i class="fa fa-exchange-alt me-2"></i> Transactions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'bookings' ? ' active' : '' %>" href="/admin/bookings">
+                        <i class="fa fa-calendar-check me-2"></i> Bookings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'users' ? ' active' : '' %>" href="/admin/users">
+                        <i class="fa fa-users me-2"></i> Users
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'packages' ? ' active' : '' %>" href="/admin/packages">
+                        <i class="fa fa-box me-2"></i> Packages
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'tables' ? ' active' : '' %>" href="/admin/tables">
+                        <i class="fa fa-table me-2"></i> Tables
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'settings' ? ' active' : '' %>" href="/admin/settings">
+                        <i class="fa fa-cog me-2"></i> Settings
+                    </a>
+                </li>
+            </ul>
+            
+            <hr class="my-3" style="border-color: rgba(255,255,255,0.1);" />
+            
+            <div class="px-3">
+                <a href="/" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fa fa-home me-2"></i> Back to Website
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+
