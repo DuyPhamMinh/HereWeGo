@@ -637,6 +637,92 @@
 .packages .packages-carousel .owl-nav .owl-next:hover i {
     color: var(--bs-white);
 }
+
+/* Fix for long content in tour cards */
+.packages .packages-item {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.packages .packages-item .packages-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.packages .packages-item .packages-content > .p-4 {
+    flex: 1;
+}
+
+.packages .packages-item .packages-content h5 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.packages .packages-item .packages-content p {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-height: 1.5;
+    max-height: 4.5em;
+}
+
+.packages .packages-item .packages-img .packages-info small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    display: block;
+    min-width: 0;
+    flex: 1 1 0;
+    font-size: 0.75rem;
+}
+
+.packages .packages-item .packages-img .packages-info {
+    display: flex;
+    gap: 0;
+}
+
+.packages .packages-item .packages-img .packages-price {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Row equal height cards */
+.packages .row.g-4 > [class*="col-"] {
+    display: flex;
+}
+
+/* Owl carousel packages equal height */
+.packages .packages-carousel .owl-stage {
+    display: flex;
+}
+
+.packages .packages-carousel .owl-item {
+    display: flex;
+}
+
+.packages .packages-carousel .packages-item {
+    width: 100%;
+}
+
+/* Ensure minimum height for content area */
+.packages .packages-item .packages-content > .p-4 {
+    min-height: 180px;
+}
+
+/* Admin tables: truncate long text */
+.table-ellipsis {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 /*** Packages End ***/
 
 
