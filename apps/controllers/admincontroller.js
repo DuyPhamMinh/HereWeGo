@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 var { isAuthenticated, isAdmin } = require(__dirname + "/../middleware/auth");
 var User = require(__dirname + "/../model/User");
+var Tour = require(__dirname + "/../model/Tour");
 
 // Apply authentication middleware to all admin routes
 router.use(isAuthenticated);
@@ -44,11 +45,6 @@ router.get("/", async function (req, res) {
 // Transactions
 router.get("/transactions", function (req, res) {
   res.render("admin/transactions.ejs", { activePage: 'transactions' });
-});
-
-// Bookings
-router.get("/bookings", function (req, res) {
-  res.render("admin/bookings.ejs", { activePage: 'bookings' });
 });
 
 // Create new user (API) - Must be before GET /users/:id to avoid route conflict
@@ -286,6 +282,246 @@ router.delete("/users/:id", async function (req, res) {
   }
 });
 
+
+// Tours Management
+// Create new tour (API) - Must be before GET /tours/:id to avoid route conflict
+router.post("/tours", async function (req, res) {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    
+    const { 
+      title, description, shortDescription, destination, duration, durationUnit,
+      maxPersons, price, discountPrice, image, category, rating, isActive, 
+      isFeatured, highlights, includes, excludes 
+    } = req.body;
+    
+    // Validation
+    if (!title || !description || !destination || !duration || !price) {
+      return res.status(400).json({ error: "Title, description, destination, duration, and price are required" });
+    }
+    
+    // Create new tour
+    const newTour = new Tour({
+      title,
+      description,
+      shortDescription: shortDescription || description.substring(0, 150),
+      destination,
+      duration: parseInt(duration),
+      durationUnit: durationUnit || 'days',
+      maxPersons: maxPersons ? parseInt(maxPersons) : 2,
+      price: parseFloat(price),
+      discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
+      image: image || "/static/img/packages-1.jpg",
+      category: category || 'other',
+      rating: rating ? parseFloat(rating) : 5,
+      isActive: isActive !== false && isActive !== 'false',
+      isFeatured: isFeatured === true || isFeatured === 'true',
+      highlights: Array.isArray(highlights) ? highlights : (highlights ? highlights.split(',').map(h => h.trim()) : []),
+      includes: Array.isArray(includes) ? includes : (includes ? includes.split(',').map(i => i.trim()) : []),
+      excludes: Array.isArray(excludes) ? excludes : (excludes ? excludes.split(',').map(e => e.trim()) : []),
+    });
+    
+    await newTour.save();
+    
+    res.json({ success: true, message: "Tour created successfully", tour: newTour });
+  } catch (error) {
+    console.error("Error creating tour:", error);
+    res.status(500).json({ error: error.message || "Error creating tour" });
+  }
+});
+
+// Get tours list
+router.get("/tours", async function (req, res) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+    const categoryFilter = req.query.category || '';
+    const statusFilter = req.query.status || '';
+    
+    // Build query
+    let query = {};
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { destination: { $regex: search, $options: 'i' } }
+      ];
+    }
+    if (categoryFilter) {
+      query.category = categoryFilter;
+    }
+    if (statusFilter === 'active') {
+      query.isActive = true;
+    } else if (statusFilter === 'inactive') {
+      query.isActive = false;
+    }
+    
+    // Get total count
+    const totalTours = await Tour.countDocuments(query);
+    
+    // Get tours with pagination
+    const tours = await Tour.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip((page - 1) * limit);
+    
+    const totalPages = Math.ceil(totalTours / limit);
+    
+    res.render("admin/tours.ejs", {
+      activePage: 'tours',
+      tours: tours,
+      currentPage: page,
+      totalPages: totalPages,
+      totalTours: totalTours,
+      search: search,
+      categoryFilter: categoryFilter,
+      statusFilter: statusFilter,
+      limit: limit,
+      currentUser: req.session.user
+    });
+  } catch (error) {
+    console.error("Error fetching tours:", error);
+    res.render("admin/tours.ejs", {
+      activePage: 'tours',
+      tours: [],
+      error: "Error loading tours"
+    });
+  }
+});
+
+// Toggle tour active status - Must be before /tours/:id to avoid route conflict
+router.post("/tours/:id/toggle-status", async function (req, res) {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    
+    const tourId = req.params.id;
+    const tour = await Tour.findById(tourId);
+    if (!tour) {
+      return res.status(404).json({ error: "Tour not found" });
+    }
+    
+    tour.isActive = !tour.isActive;
+    await tour.save();
+    
+    const action = tour.isActive ? "activated" : "deactivated";
+    res.json({ 
+      success: true, 
+      message: `Tour ${action} successfully`,
+      isActive: tour.isActive
+    });
+  } catch (error) {
+    console.error("Error toggling tour status:", error);
+    res.status(500).json({ error: error.message || "Error toggling tour status" });
+  }
+});
+
+// Toggle tour featured status - Must be before /tours/:id to avoid route conflict
+router.post("/tours/:id/toggle-featured", async function (req, res) {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    
+    const tourId = req.params.id;
+    const tour = await Tour.findById(tourId);
+    if (!tour) {
+      return res.status(404).json({ error: "Tour not found" });
+    }
+    
+    tour.isFeatured = !tour.isFeatured;
+    await tour.save();
+    
+    const action = tour.isFeatured ? "featured" : "unfeatured";
+    res.json({ 
+      success: true, 
+      message: `Tour ${action} successfully`,
+      isFeatured: tour.isFeatured
+    });
+  } catch (error) {
+    console.error("Error toggling tour featured:", error);
+    res.status(500).json({ error: error.message || "Error toggling tour featured" });
+  }
+});
+
+// Get tour by ID (API)
+router.get("/tours/:id", async function (req, res) {
+  try {
+    const tour = await Tour.findById(req.params.id);
+    if (!tour) {
+      return res.status(404).json({ error: "Tour not found" });
+    }
+    res.json(tour);
+  } catch (error) {
+    console.error("Error fetching tour:", error);
+    res.status(500).json({ error: "Error fetching tour" });
+  }
+});
+
+// Update tour
+router.post("/tours/:id", async function (req, res) {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    
+    const { 
+      title, description, shortDescription, destination, duration, durationUnit,
+      maxPersons, price, discountPrice, image, category, rating, isActive, 
+      isFeatured, highlights, includes, excludes 
+    } = req.body;
+    
+    const tour = await Tour.findById(req.params.id);
+    if (!tour) {
+      return res.status(404).json({ error: "Tour not found" });
+    }
+    
+    // Update fields
+    if (title) tour.title = title;
+    if (description) tour.description = description;
+    if (shortDescription !== undefined) tour.shortDescription = shortDescription;
+    if (destination) tour.destination = destination;
+    if (duration) tour.duration = parseInt(duration);
+    if (durationUnit) tour.durationUnit = durationUnit;
+    if (maxPersons) tour.maxPersons = parseInt(maxPersons);
+    if (price) tour.price = parseFloat(price);
+    if (discountPrice !== undefined) tour.discountPrice = discountPrice ? parseFloat(discountPrice) : undefined;
+    if (image) tour.image = image;
+    if (category) tour.category = category;
+    if (rating) tour.rating = parseFloat(rating);
+    if (isActive !== undefined) tour.isActive = isActive !== false && isActive !== 'false';
+    if (isFeatured !== undefined) tour.isFeatured = isFeatured === true || isFeatured === 'true';
+    if (highlights !== undefined) {
+      tour.highlights = Array.isArray(highlights) ? highlights : (highlights ? highlights.split(',').map(h => h.trim()) : []);
+    }
+    if (includes !== undefined) {
+      tour.includes = Array.isArray(includes) ? includes : (includes ? includes.split(',').map(i => i.trim()) : []);
+    }
+    if (excludes !== undefined) {
+      tour.excludes = Array.isArray(excludes) ? excludes : (excludes ? excludes.split(',').map(e => e.trim()) : []);
+    }
+    
+    await tour.save();
+    
+    res.json({ success: true, message: "Tour updated successfully", tour: tour });
+  } catch (error) {
+    console.error("Error updating tour:", error);
+    res.status(500).json({ error: error.message || "Error updating tour" });
+  }
+});
+
+// Delete tour
+router.delete("/tours/:id", async function (req, res) {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    
+    const tour = await Tour.findByIdAndDelete(req.params.id);
+    if (!tour) {
+      return res.status(404).json({ error: "Tour not found" });
+    }
+    
+    res.json({ success: true, message: "Tour deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting tour:", error);
+    res.status(500).json({ error: "Error deleting tour" });
+  }
+});
 
 // Packages
 router.get("/packages", function (req, res) {
