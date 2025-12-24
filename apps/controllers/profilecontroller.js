@@ -3,13 +3,15 @@ var router = express.Router();
 var { isAuthenticated } = require(__dirname + "/../middleware/auth");
 var User = require(__dirname + "/../model/User");
 
-// Apply authentication middleware
+// Apply authentication middleware to all profile routes
 router.use(isAuthenticated);
 
 // Get profile page
 router.get("/", async function (req, res) {
   try {
-    const user = await User.findById(req.session.user.id).select('-password');
+    const userId = req.session.user.id;
+    const user = await User.findById(userId).select('-password');
+    
     if (!user) {
       return res.redirect("/login");
     }
@@ -22,7 +24,12 @@ router.get("/", async function (req, res) {
     });
   } catch (error) {
     console.error("Error loading profile:", error);
-    res.redirect("/login");
+    res.render("profile.ejs", {
+      activePage: 'profile',
+      user: req.session.user,
+      error: "Error loading profile",
+      success: null
+    });
   }
 });
 
@@ -141,7 +148,7 @@ router.post("/change-password", async function (req, res) {
       return res.render("profile.ejs", {
         activePage: 'profile',
         user: await User.findById(userId).select('-password'),
-        error: "Password must be at least 6 characters",
+        error: "New password must be at least 6 characters",
         success: null
       });
     }

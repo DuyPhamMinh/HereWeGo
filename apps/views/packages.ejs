@@ -73,9 +73,9 @@
                             <div class="packages-img">
                                 <img src="<%= tour.image || '/static/img/packages-1.jpg' %>" class="img-fluid w-100 rounded-top" alt="<%= tour.title %>">
                                 <div class="packages-info d-flex border border-start-0 border-end-0 position-absolute" style="width: 100%; bottom: 0; left: 0; z-index: 5;">
-                                    <small class="flex-fill text-center border-end py-2"><i class="fa fa-map-marker-alt me-2"></i><%= tour.destination %></small>
-                                    <small class="flex-fill text-center border-end py-2"><i class="fa fa-calendar-alt me-2"></i><%= tour.duration %> <%= tour.durationUnit || 'days' %></small>
-                                    <small class="flex-fill text-center py-2"><i class="fa fa-user me-2"></i><%= tour.maxPersons || 2 %> Person</small>
+                                    <small class="flex-fill text-center border-end py-2 text-truncate" style="min-width:0;" title="<%= tour.destination %>"><i class="fa fa-map-marker-alt me-2"></i><%= tour.destination && tour.destination.length > 15 ? tour.destination.substring(0, 15) + '...' : tour.destination %></small>
+                                    <small class="flex-fill text-center border-end py-2 text-truncate" style="min-width:0;"><i class="fa fa-calendar-alt me-2"></i><%= tour.duration > 999 ? '999+' : tour.duration %> <%= tour.durationUnit || 'days' %></small>
+                                    <small class="flex-fill text-center py-2 text-truncate" style="min-width:0;"><i class="fa fa-user me-2"></i><%= (tour.maxPersons || 2) > 99 ? '99+' : (tour.maxPersons || 2) %> Person</small>
                                 </div>
                                 <div class="packages-price py-2 px-4">
                                     <% if (tour.discountPrice) { %>
