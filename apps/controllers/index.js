@@ -32,6 +32,7 @@ router.use("/blog", require(__dirname + "/blogcontroller"));
 router.use("/contact", require(__dirname + "/contactcontroller"));
 router.use("/destination", require(__dirname + "/destinationcontroller"));
 router.use("/tour", require(__dirname + "/tourcontroller"));
+router.use("/booking", require(__dirname + "/bookingcontroller"));
 router.use("/gallery", require(__dirname + "/gallerycontroller"));
 router.use("/guides", require(__dirname + "/guidescontroller"));
 router.use("/testimonial", require(__dirname + "/testimonialcontroller"));
