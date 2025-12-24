@@ -47,6 +47,204 @@ router.get("/transactions", function (req, res) {
   res.render("admin/transactions.ejs", { activePage: 'transactions' });
 });
 
+// Bookings Management
+router.get("/bookings", async function (req, res) {
+  try {
+    const Booking = require(__dirname + "/../model/Booking");
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+    const statusFilter = req.query.status || '';
+    
+    // Build query
+    let query = {};
+    if (search) {
+      query.$or = [
+        { guestName: { $regex: search, $options: 'i' } },
+        { guestEmail: { $regex: search, $options: 'i' } },
+        { guestPhone: { $regex: search, $options: 'i' } }
+      ];
+    }
+    if (statusFilter) {
+      query.status = statusFilter;
+    }
+    
+    // Get total count
+    const totalBookings = await Booking.countDocuments(query);
+    
+    // Get bookings with pagination
+    const bookings = await Booking.find(query)
+      .populate('user', 'firstName lastName email')
+      .populate('tour', 'title destination image price discountPrice')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip((page - 1) * limit);
+    
+    const totalPages = Math.ceil(totalBookings / limit);
+    
+    // Get statistics
+    const totalBookingsCount = await Booking.countDocuments();
+    const confirmedCount = await Booking.countDocuments({ status: 'confirmed' });
+    const pendingCount = await Booking.countDocuments({ status: 'pending' });
+    const cancelledCount = await Booking.countDocuments({ status: 'cancelled' });
+    const completedCount = await Booking.countDocuments({ status: 'completed' });
+    
+    res.render("admin/bookings.ejs", {
+      activePage: 'bookings',
+      bookings: bookings,
+      currentPage: page,
+      totalPages: totalPages,
+      totalBookings: totalBookings,
+      search: search,
+      statusFilter: statusFilter,
+      limit: limit,
+      totalBookingsCount: totalBookingsCount,
+      confirmedCount: confirmedCount,
+      pendingCount: pendingCount,
+      cancelledCount: cancelledCount,
+      completedCount: completedCount,
+      currentUser: req.session.user
+    });
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+    res.render("admin/bookings.ejs", {
+      activePage: 'bookings',
+      bookings: [],
+      error: "Error loading bookings",
+      totalBookingsCount: 0,
+      confirmedCount: 0,
+      pendingCount: 0,
+      cancelledCount: 0,
+      completedCount: 0
+    });
+  }
+});
+
+// Get booking by ID (API)
+router.get("/bookings/:id", async function (req, res) {
+  try {
+    const Booking = require(__dirname + "/../model/Booking");
+    const booking = await Booking.findById(req.params.id)
+      .populate('user', 'firstName lastName email phone')
+      .populate('tour', 'title destination image price discountPrice duration durationUnit');
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+    res.json(booking);
+  } catch (error) {
+    console.error("Error fetching booking:", error);
+    res.status(500).json({ error: "Error fetching booking" });
+  }
+});
+
+// Update booking status - Must be before /bookings/:id POST to avoid route conflict
+router.post("/bookings/:id/status", async function (req, res) {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    const Booking = require(__dirname + "/../model/Booking");
+    
+    const { status } = req.body;
+    const bookingId = req.params.id;
+    
+    if (!['pending', 'confirmed', 'cancelled', 'completed'].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+    
+    const booking = await Booking.findByIdAndUpdate(bookingId, { status: status }, { new: true });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+    
+    res.json({ success: true, message: "Booking status updated successfully", booking: booking });
+  } catch (error) {
+    console.error("Error updating booking status:", error);
+    res.status(500).json({ error: error.message || "Error updating booking status" });
+  }
+});
+
+// Update booking payment status - Must be before /bookings/:id POST to avoid route conflict
+router.post("/bookings/:id/payment-status", async function (req, res) {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    const Booking = require(__dirname + "/../model/Booking");
+    
+    const { paymentStatus, paymentMethod } = req.body;
+    const bookingId = req.params.id;
+    
+    if (!['pending', 'paid', 'refunded'].includes(paymentStatus)) {
+      return res.status(400).json({ error: "Invalid payment status" });
+    }
+    
+    const updateData = { paymentStatus: paymentStatus };
+    if (paymentMethod) {
+      updateData.paymentMethod = paymentMethod;
+    }
+    
+    const booking = await Booking.findByIdAndUpdate(bookingId, updateData, { new: true });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+    
+    res.json({ success: true, message: "Payment status updated successfully", booking: booking });
+  } catch (error) {
+    console.error("Error updating payment status:", error);
+    res.status(500).json({ error: error.message || "Error updating payment status" });
+  }
+});
+
+// Update booking
+router.post("/bookings/:id", async function (req, res) {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    const Booking = require(__dirname + "/../model/Booking");
+    
+    const { 
+      guestName, guestEmail, guestPhone, bookingDate, 
+      numberOfPersons, totalPrice, specialRequest, notes 
+    } = req.body;
+    
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+    
+    // Update fields
+    if (guestName) booking.guestName = guestName;
+    if (guestEmail) booking.guestEmail = guestEmail;
+    if (guestPhone !== undefined) booking.guestPhone = guestPhone;
+    if (bookingDate) booking.bookingDate = new Date(bookingDate);
+    if (numberOfPersons) booking.numberOfPersons = parseInt(numberOfPersons);
+    if (totalPrice) booking.totalPrice = parseFloat(totalPrice);
+    if (specialRequest !== undefined) booking.specialRequest = specialRequest;
+    if (notes !== undefined) booking.notes = notes;
+    
+    await booking.save();
+    
+    res.json({ success: true, message: "Booking updated successfully", booking: booking });
+  } catch (error) {
+    console.error("Error updating booking:", error);
+    res.status(500).json({ error: error.message || "Error updating booking" });
+  }
+});
+
+// Delete booking
+router.delete("/bookings/:id", async function (req, res) {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    const Booking = require(__dirname + "/../model/Booking");
+    
+    const booking = await Booking.findByIdAndDelete(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+    
+    res.json({ success: true, message: "Booking deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting booking:", error);
+    res.status(500).json({ error: "Error deleting booking" });
+  }
+});
+
 // Create new user (API) - Must be before GET /users/:id to avoid route conflict
 router.post("/users", async function (req, res) {
   try {
