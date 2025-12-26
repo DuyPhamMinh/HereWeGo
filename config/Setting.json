@@ -1,0 +1,11 @@
+{
+  "mongodb": {
+    "username": "",
+    "password": "",
+    "database": "account"
+  },
+  "jwt": {
+    "secret": "goK!pusp6ThEdURUtRenOwUhAsWUCLheBazl!uJLPlS8EbreWLdrupIwabRAsiBu",
+    "expiresIn": "24h"
+  }
+}
