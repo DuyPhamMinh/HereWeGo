@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('partical/head'); %>
+    <title>My Profile - HereWeGo</title>
+  </head>
+
+  <body>
+    <!-- Spinner Start -->
+    <div
+      id="spinner"
+      class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center"
+    >
+      <div
+        class="spinner-border text-primary"
+        style="width: 3rem; height: 3rem"
+        role="status"
+      >
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+    <!-- Spinner End -->
+
+    <% var activePage = 'profile'; %> <%- include('partical/menu'); %>
+
+    <!-- Header Start -->
+    <div class="container-fluid bg-breadcrumb">
+      <div class="container text-center py-5" style="max-width: 900px">
+        <h3 class="text-white display-3 mb-4">My Profile</h3>
+        <ol class="breadcrumb justify-content-center mb-0">
+          <li class="breadcrumb-item"><a href="/">Home</a></li>
+          <li class="breadcrumb-item active text-white">Profile</li>
+        </ol>
+      </div>
+    </div>
+    <!-- Header End -->
+
+    <!-- Profile Start -->
+    <div class="container-fluid py-5">
+      <div class="container">
+        <div class="row g-5">
+          <!-- Profile Information -->
+          <div class="col-lg-8">
+            <div class="bg-white rounded shadow-sm p-4 mb-4">
+              <h4 class="mb-4">
+                <i class="fa fa-user me-2"></i>Profile Information
+              </h4>
+
+              <% if (typeof error !== 'undefined' && error) { %>
+              <div
+                class="alert alert-danger alert-dismissible fade show"
+                role="alert"
+              >
+                <i class="fa fa-exclamation-circle me-2"></i><%= error %>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="alert"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <% } %> <% if (typeof success !== 'undefined' && success) { %>
+              <div
+                class="alert alert-success alert-dismissible fade show"
+                role="alert"
+              >
+                <i class="fa fa-check-circle me-2"></i><%= success %>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="alert"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <% } %>
+
+              <form method="POST" action="/profile">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input
+                        type="text"
+                        class="form-control border-0"
+                        id="firstName"
+                        name="firstName"
+                        placeholder="First Name"
+                        value="<%= typeof user !== 'undefined' && user ? user.firstName : '' %>"
+                        required
+                      />
+                      <label for="firstName"
+                        ><i class="fa fa-user me-2"></i>First Name</label
+                      >
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input
+                        type="text"
+                        class="form-control border-0"
+                        id="lastName"
+                        name="lastName"
+                        placeholder="Last Name"
+                        value="<%= typeof user !== 'undefined' && user ? user.lastName : '' %>"
+                        required
+                      />
+                      <label for="lastName"
+                        ><i class="fa fa-user me-2"></i>Last Name</label
+                      >
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input
+                        type="email"
+                        class="form-control border-0"
+                        id="email"
+                        name="email"
+                        placeholder="Your Email"
+                        value="<%= typeof user !== 'undefined' && user ? user.email : '' %>"
+                        required
+                      />
+                      <label for="email"
+                        ><i class="fa fa-envelope me-2"></i>Email</label
+                      >
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input
+                        type="tel"
+                        class="form-control border-0"
+                        id="phone"
+                        name="phone"
+                        placeholder="Your Phone"
+                        value="<%= typeof user !== 'undefined' && user && user.phone ? user.phone : '' %>"
+                      />
+                      <label for="phone"
+                        ><i class="fa fa-phone me-2"></i>Phone</label
+                      >
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input
+                        type="date"
+                        class="form-control border-0"
+                        id="birthDate"
+                        name="birthDate"
+                        value="<%= typeof user !== 'undefined' && user && user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '' %>"
+                      />
+                      <label for="birthDate"
+                        ><i class="fa fa-calendar me-2"></i>Date of Birth</label
+                      >
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-check mt-4">
+                      <input class="form-check-input" type="checkbox"
+                      id="newsletter" name="newsletter" <%= typeof user !==
+                      'undefined' && user && user.newsletter ? 'checked' : ''
+                      %>>
+                      <label class="form-check-label" for="newsletter">
+                        Subscribe to Newsletter
+                      </label>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <button
+                      class="btn btn-primary rounded-pill py-3 px-5"
+                      type="submit"
+                    >
+                      <i class="fa fa-save me-2"></i>Update Profile
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Change Password -->
+          <div class="col-lg-4">
+            <div class="bg-white rounded shadow-sm p-4 mb-4">
+              <h4 class="mb-4">
+                <i class="fa fa-lock me-2"></i>Change Password
+              </h4>
+
+              <form
+                method="POST"
+                action="/profile/change-password"
+                id="changePasswordForm"
+              >
+                <div class="row g-3">
+                  <div class="col-12">
+                    <div class="form-floating position-relative">
+                      <input
+                        type="password"
+                        class="form-control border-0"
+                        id="currentPassword"
+                        name="currentPassword"
+                        placeholder="Current Password"
+                        required
+                      />
+                      <label for="currentPassword"
+                        ><i class="fa fa-lock me-2"></i>Current Password</label
+                      >
+                      <button
+                        type="button"
+                        class="btn btn-link position-absolute end-0 top-50 translate-middle-y pe-3"
+                        id="toggleCurrentPassword"
+                        style="
+                          z-index: 10;
+                          border: none;
+                          background: none;
+                          color: #6c757d;
+                        "
+                      >
+                        <i class="fa fa-eye" id="eyeIconCurrent"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-floating position-relative">
+                      <input
+                        type="password"
+                        class="form-control border-0"
+                        id="newPassword"
+                        name="newPassword"
+                        placeholder="New Password"
+                        required
+                        minlength="6"
+                      />
+                      <label for="newPassword"
+                        ><i class="fa fa-lock me-2"></i>New Password</label
+                      >
+                      <button
+                        type="button"
+                        class="btn btn-link position-absolute end-0 top-50 translate-middle-y pe-3"
+                        id="toggleNewPassword"
+                        style="
+                          z-index: 10;
+                          border: none;
+                          background: none;
+                          color: #6c757d;
+                        "
+                      >
+                        <i class="fa fa-eye" id="eyeIconNew"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-floating position-relative">
+                      <input
+                        type="password"
+                        class="form-control border-0"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder="Confirm Password"
+                        required
+                        minlength="6"
+                      />
+                      <label for="confirmPassword"
+                        ><i class="fa fa-lock me-2"></i>Confirm Password</label
+                      >
+                      <button
+                        type="button"
+                        class="btn btn-link position-absolute end-0 top-50 translate-middle-y pe-3"
+                        id="toggleConfirmPassword"
+                        style="
+                          z-index: 10;
+                          border: none;
+                          background: none;
+                          color: #6c757d;
+                        "
+                      >
+                        <i class="fa fa-eye" id="eyeIconConfirm"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <button
+                      class="btn btn-primary rounded-pill py-3 px-5 w-100"
+                      type="submit"
+                    >
+                      <i class="fa fa-key me-2"></i>Change Password
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Account Info -->
+            <div class="bg-white rounded shadow-sm p-4">
+              <h4 class="mb-4">
+                <i class="fa fa-info-circle me-2"></i>Account Information
+              </h4>
+              <ul class="list-unstyled">
+                <li class="mb-3">
+                  <strong><i class="fa fa-user-shield me-2"></i>Role:</strong>
+                  <% if (typeof user !== 'undefined' && user && user.role ===
+                  'admin') { %>
+                  <span class="badge bg-danger">Admin</span>
+                  <% } else { %>
+                  <span class="badge bg-primary">User</span>
+                  <% } %>
+                </li>
+                <li class="mb-3">
+                  <strong
+                    ><i class="fa fa-calendar-check me-2"></i>Member
+                    Since:</strong
+                  ><br />
+                  <small class="text-muted">
+                    <%= typeof user !== 'undefined' && user && user.createdAt ?
+                    new Date(user.createdAt).toLocaleDateString() : 'N/A' %>
+                  </small>
+                </li>
+                <li class="mb-3">
+                  <strong
+                    ><i class="fa fa-check-circle me-2"></i>Status:</strong
+                  >
+                  <% if (typeof user !== 'undefined' && user && user.isActive
+                  !== false) { %>
+                  <span class="badge bg-success">Active</span>
+                  <% } else { %>
+                  <span class="badge bg-danger">Locked</span>
+                  <% } %>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Profile End -->
+
+    <%- include('partical/footer'); %>
+
+    <script>
+      // Toggle password visibility
+      document
+        .getElementById("toggleCurrentPassword")
+        ?.addEventListener("click", function () {
+          const passwordInput = document.getElementById("currentPassword");
+          const eyeIcon = document.getElementById("eyeIconCurrent");
+
+          if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            eyeIcon.classList.remove("fa-eye");
+            eyeIcon.classList.add("fa-eye-slash");
+          } else {
+            passwordInput.type = "password";
+            eyeIcon.classList.remove("fa-eye-slash");
+            eyeIcon.classList.add("fa-eye");
+          }
+        });
+
+      document
+        .getElementById("toggleNewPassword")
+        ?.addEventListener("click", function () {
+          const passwordInput = document.getElementById("newPassword");
+          const eyeIcon = document.getElementById("eyeIconNew");
+
+          if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            eyeIcon.classList.remove("fa-eye");
+            eyeIcon.classList.add("fa-eye-slash");
+          } else {
+            passwordInput.type = "password";
+            eyeIcon.classList.remove("fa-eye-slash");
+            eyeIcon.classList.add("fa-eye");
+          }
+        });
+
+      document
+        .getElementById("toggleConfirmPassword")
+        ?.addEventListener("click", function () {
+          const passwordInput = document.getElementById("confirmPassword");
+          const eyeIcon = document.getElementById("eyeIconConfirm");
+
+          if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            eyeIcon.classList.remove("fa-eye");
+            eyeIcon.classList.add("fa-eye-slash");
+          } else {
+            passwordInput.type = "password";
+            eyeIcon.classList.remove("fa-eye-slash");
+            eyeIcon.classList.add("fa-eye");
+          }
+        });
+
+      // Validate password match
+      document
+        .getElementById("changePasswordForm")
+        ?.addEventListener("submit", function (e) {
+          const newPassword = document.getElementById("newPassword").value;
+          const confirmPassword =
+            document.getElementById("confirmPassword").value;
+
+          if (newPassword !== confirmPassword) {
+            e.preventDefault();
+            alert("New passwords do not match!");
+            return false;
+          }
+        });
+    </script>
+  </body>
+</html>

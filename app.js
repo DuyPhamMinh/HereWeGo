@@ -4,8 +4,12 @@ var session = require("express-session");
 var MongoStore = require("connect-mongo").default;
 var connectDB = require(__dirname + "/config/database");
 
+// Set global base directory
+global.__basedir = __dirname;
+
 var app = express();
 var controller = require(__dirname + "/apps/controllers");
+var apiRoutes = require(__dirname + "/apps/api/routes");
 
 // Connect to MongoDB
 connectDB();
@@ -14,6 +18,7 @@ app.set("views", __dirname + "/apps/views");
 app.set("view engine", "ejs");
 
 // Body parser middleware
+app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -48,6 +53,10 @@ app.get("/favicon.ico", function (req, res) {
   res.sendFile(__dirname + "/public/favicon.ico");
 });
 
+// API Routes (RESTful API)
+app.use("/api", apiRoutes);
+
+// View Routes (Traditional EJS views)
 app.use(controller);
 
 var server = app.listen(8080, function () {
