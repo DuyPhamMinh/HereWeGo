@@ -115,6 +115,13 @@
                                             <strong>Booking ID:</strong> #<%= booking._id.toString().substring(18, 24) %>
                                         </small>
                                     </p>
+                                    <% if (booking.paymentStatus === 'pending') { %>
+                                    <div class="mt-3">
+                                        <button type="button" class="btn btn-primary btn-sm w-100 pay-vnpay-btn" data-booking-id="<%= booking._id %>">
+                                            <i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay
+                                        </button>
+                                    </div>
+                                    <% } %>
                                 </div>
                             </div>
                         </div>
@@ -134,6 +141,45 @@
     <!-- Bookings End -->
 
     <%- include('partical/footer'); %>
+
+    <script>
+        // VNPay payment button handlers
+        document.querySelectorAll('.pay-vnpay-btn').forEach(function(btn) {
+            btn.addEventListener('click', async function() {
+                const bookingId = this.getAttribute('data-booking-id');
+                const button = this;
+                
+                // Disable button and show loading
+                button.disabled = true;
+                button.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Đang xử lý...';
+                
+                try {
+                    const response = await fetch(`/booking/${bookingId}/payment/vnpay`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.paymentUrl) {
+                        // Redirect to VNPay payment page
+                        window.location.href = data.paymentUrl;
+                    } else {
+                        alert('Có lỗi xảy ra: ' + (data.message || 'Không thể tạo link thanh toán'));
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi tạo link thanh toán. Vui lòng thử lại.');
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay';
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
