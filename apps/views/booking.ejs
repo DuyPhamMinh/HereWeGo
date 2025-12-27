@@ -60,6 +60,28 @@
                             <i class="fa fa-check-circle me-2"></i><%= success %>
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
+                        <% if (typeof booking !== 'undefined' && booking && booking.paymentStatus === 'pending') { %>
+                        <div class="card bg-light border-primary mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary">
+                                    <i class="fa fa-credit-card me-2"></i>Thanh toán ngay
+                                </h5>
+                                <p class="card-text mb-3">
+                                    Bạn có thể thanh toán ngay bằng VNPay để xác nhận đặt tour.
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <strong>Tổng tiền:</strong> 
+                                        <span class="text-primary fs-4">$<%= booking.totalPrice.toFixed(2) %></span>
+                                        <small class="text-muted">(~<%= Math.round(booking.totalPrice * 24000).toLocaleString('vi-VN') %> VND)</small>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-lg w-100" id="payWithVNPayBtn" data-booking-id="<%= booking._id %>">
+                                    <i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay
+                                </button>
+                            </div>
+                        </div>
+                        <% } %>
                         <% } %>
                         
                         <% if (typeof tour !== 'undefined' && tour) { %>
@@ -263,6 +285,41 @@
                     e.preventDefault();
                     alert('Please select a tour');
                     return false;
+                }
+            });
+
+            // VNPay payment button handler
+            document.getElementById('payWithVNPayBtn')?.addEventListener('click', async function() {
+                const bookingId = this.getAttribute('data-booking-id');
+                const btn = this;
+                
+                // Disable button and show loading
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Đang xử lý...';
+                
+                try {
+                    const response = await fetch(`/booking/${bookingId}/payment/vnpay`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.paymentUrl) {
+                        // Redirect to VNPay payment page
+                        window.location.href = data.paymentUrl;
+                    } else {
+                        alert('Có lỗi xảy ra: ' + (data.message || 'Không thể tạo link thanh toán'));
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi tạo link thanh toán. Vui lòng thử lại.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay';
                 }
             });
         </script>
