@@ -55,6 +55,7 @@ router.get("/bookings", async function (req, res) {
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search || '';
     const statusFilter = req.query.status || '';
+    const paymentStatusFilter = req.query.paymentStatus || '';
     
     // Build query
     let query = {};
@@ -67,6 +68,9 @@ router.get("/bookings", async function (req, res) {
     }
     if (statusFilter) {
       query.status = statusFilter;
+    }
+    if (paymentStatusFilter) {
+      query.paymentStatus = paymentStatusFilter;
     }
     
     // Get total count
@@ -88,6 +92,9 @@ router.get("/bookings", async function (req, res) {
     const pendingCount = await Booking.countDocuments({ status: 'pending' });
     const cancelledCount = await Booking.countDocuments({ status: 'cancelled' });
     const completedCount = await Booking.countDocuments({ status: 'completed' });
+    const paidCount = await Booking.countDocuments({ paymentStatus: 'paid' });
+    const paymentPendingCount = await Booking.countDocuments({ paymentStatus: 'pending' });
+    const refundedCount = await Booking.countDocuments({ paymentStatus: 'refunded' });
     
     res.render("admin/bookings.ejs", {
       activePage: 'bookings',
@@ -97,12 +104,16 @@ router.get("/bookings", async function (req, res) {
       totalBookings: totalBookings,
       search: search,
       statusFilter: statusFilter,
+      paymentStatusFilter: paymentStatusFilter,
       limit: limit,
       totalBookingsCount: totalBookingsCount,
       confirmedCount: confirmedCount,
       pendingCount: pendingCount,
       cancelledCount: cancelledCount,
       completedCount: completedCount,
+      paidCount: paidCount,
+      paymentPendingCount: paymentPendingCount,
+      refundedCount: refundedCount,
       currentUser: req.session.user
     });
   } catch (error) {
@@ -137,113 +148,7 @@ router.get("/bookings/:id", async function (req, res) {
   }
 });
 
-// Update booking status - Must be before /bookings/:id POST to avoid route conflict
-router.post("/bookings/:id/status", async function (req, res) {
-  try {
-    res.setHeader('Content-Type', 'application/json');
-    const Booking = require(__dirname + "/../model/Booking");
-    
-    const { status } = req.body;
-    const bookingId = req.params.id;
-    
-    if (!['pending', 'confirmed', 'cancelled', 'completed'].includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
-    }
-    
-    const booking = await Booking.findByIdAndUpdate(bookingId, { status: status }, { new: true });
-    if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
-    }
-    
-    res.json({ success: true, message: "Booking status updated successfully", booking: booking });
-  } catch (error) {
-    console.error("Error updating booking status:", error);
-    res.status(500).json({ error: error.message || "Error updating booking status" });
-  }
-});
-
-// Update booking payment status - Must be before /bookings/:id POST to avoid route conflict
-router.post("/bookings/:id/payment-status", async function (req, res) {
-  try {
-    res.setHeader('Content-Type', 'application/json');
-    const Booking = require(__dirname + "/../model/Booking");
-    
-    const { paymentStatus, paymentMethod } = req.body;
-    const bookingId = req.params.id;
-    
-    if (!['pending', 'paid', 'refunded'].includes(paymentStatus)) {
-      return res.status(400).json({ error: "Invalid payment status" });
-    }
-    
-    const updateData = { paymentStatus: paymentStatus };
-    if (paymentMethod) {
-      updateData.paymentMethod = paymentMethod;
-    }
-    
-    const booking = await Booking.findByIdAndUpdate(bookingId, updateData, { new: true });
-    if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
-    }
-    
-    res.json({ success: true, message: "Payment status updated successfully", booking: booking });
-  } catch (error) {
-    console.error("Error updating payment status:", error);
-    res.status(500).json({ error: error.message || "Error updating payment status" });
-  }
-});
-
-// Update booking
-router.post("/bookings/:id", async function (req, res) {
-  try {
-    res.setHeader('Content-Type', 'application/json');
-    const Booking = require(__dirname + "/../model/Booking");
-    
-    const { 
-      guestName, guestEmail, guestPhone, bookingDate, 
-      numberOfPersons, totalPrice, specialRequest, notes 
-    } = req.body;
-    
-    const booking = await Booking.findById(req.params.id);
-    if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
-    }
-    
-    // Update fields
-    if (guestName) booking.guestName = guestName;
-    if (guestEmail) booking.guestEmail = guestEmail;
-    if (guestPhone !== undefined) booking.guestPhone = guestPhone;
-    if (bookingDate) booking.bookingDate = new Date(bookingDate);
-    if (numberOfPersons) booking.numberOfPersons = parseInt(numberOfPersons);
-    if (totalPrice) booking.totalPrice = parseFloat(totalPrice);
-    if (specialRequest !== undefined) booking.specialRequest = specialRequest;
-    if (notes !== undefined) booking.notes = notes;
-    
-    await booking.save();
-    
-    res.json({ success: true, message: "Booking updated successfully", booking: booking });
-  } catch (error) {
-    console.error("Error updating booking:", error);
-    res.status(500).json({ error: error.message || "Error updating booking" });
-  }
-});
-
-// Delete booking
-router.delete("/bookings/:id", async function (req, res) {
-  try {
-    res.setHeader('Content-Type', 'application/json');
-    const Booking = require(__dirname + "/../model/Booking");
-    
-    const booking = await Booking.findByIdAndDelete(req.params.id);
-    if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
-    }
-    
-    res.json({ success: true, message: "Booking deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting booking:", error);
-    res.status(500).json({ error: "Error deleting booking" });
-  }
-});
+// Note: Admin can only view bookings, not edit or delete them
 
 // Create new user (API) - Must be before GET /users/:id to avoid route conflict
 router.post("/users", async function (req, res) {
