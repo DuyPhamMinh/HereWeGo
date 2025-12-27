@@ -1,191 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <%- include('partical/head'); %>
     <title>My Bookings - HereWeGo</title>
-</head>
+  </head>
 
-<body>
+  <body>
     <!-- Spinner Start -->
-    <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
-        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-            <span class="sr-only">Loading...</span>
-        </div>
+    <div
+      id="spinner"
+      class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center"
+    >
+      <div
+        class="spinner-border text-primary"
+        style="width: 3rem; height: 3rem"
+        role="status"
+      >
+        <span class="sr-only">Loading...</span>
+      </div>
     </div>
     <!-- Spinner End -->
 
-    <% var activePage = 'my-bookings'; %>
-    <%- include('partical/menu'); %>
+    <% var activePage = 'my-bookings'; %> <%- include('partical/menu'); %>
 
     <!-- Header Start -->
     <div class="container-fluid bg-breadcrumb">
-        <div class="container text-center py-5" style="max-width: 900px;">
-            <h3 class="text-white display-3 mb-4">My Bookings</h3>
-            <ol class="breadcrumb justify-content-center mb-0">
-                <li class="breadcrumb-item"><a href="/">Home</a></li>
-                <li class="breadcrumb-item"><a href="/profile">Profile</a></li>
-                <li class="breadcrumb-item active text-white">My Bookings</li>
-            </ol>    
-        </div>
+      <div class="container text-center py-5" style="max-width: 900px">
+        <h3 class="text-white display-3 mb-4">My Bookings</h3>
+        <ol class="breadcrumb justify-content-center mb-0">
+          <li class="breadcrumb-item"><a href="/">Home</a></li>
+          <li class="breadcrumb-item"><a href="/profile">Profile</a></li>
+          <li class="breadcrumb-item active text-white">My Bookings</li>
+        </ol>
+      </div>
     </div>
     <!-- Header End -->
 
     <!-- Bookings Start -->
     <div class="container-fluid py-5">
-        <div class="container">
-            <% if (typeof error !== 'undefined' && error) { %>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fa fa-exclamation-circle me-2"></i><%= error %>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            <% } %>
-
-            <% if (typeof bookings !== 'undefined' && bookings.length > 0) { %>
-            <div class="row g-4">
-                <% bookings.forEach(function(booking) { %>
-                <div class="col-lg-6">
-                    <div class="card shadow-sm h-100">
-                        <div class="row g-0">
-                            <div class="col-md-4">
-                                <img src="<%= booking.tour && booking.tour.image ? booking.tour.image : '/static/img/packages-1.jpg' %>" 
-                                     class="img-fluid rounded-start h-100" 
-                                     alt="<%= booking.tour && booking.tour.title ? booking.tour.title : 'Tour' %>"
-                                     style="object-fit: cover;">
-                            </div>
-                            <div class="col-md-8">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <%= booking.tour && booking.tour.title ? booking.tour.title : 'Tour' %>
-                                    </h5>
-                                    <p class="card-text mb-2">
-                                        <i class="fa fa-map-marker-alt me-2 text-primary"></i>
-                                        <%= booking.tour && booking.tour.destination ? booking.tour.destination : 'N/A' %>
-                                    </p>
-                                    <p class="card-text mb-2">
-                                        <i class="fa fa-calendar-alt me-2 text-primary"></i>
-                                        <strong>Booking Date:</strong> <%= new Date(booking.bookingDate).toLocaleDateString() %>
-                                    </p>
-                                    <p class="card-text mb-2">
-                                        <i class="fa fa-users me-2 text-primary"></i>
-                                        <strong>Persons:</strong> <%= booking.numberOfPersons %>
-                                    </p>
-                                    <p class="card-text mb-2">
-                                        <i class="fa fa-dollar-sign me-2 text-primary"></i>
-                                        <strong>Total Price:</strong> $<%= booking.totalPrice.toFixed(2) %>
-                                    </p>
-                                    <p class="card-text mb-2">
-                                        <strong>Status:</strong>
-                                        <% if (booking.status === 'confirmed') { %>
-                                        <span class="badge bg-success">Confirmed</span>
-                                        <% } else if (booking.status === 'cancelled') { %>
-                                        <span class="badge bg-danger">Cancelled</span>
-                                        <% } else if (booking.status === 'completed') { %>
-                                        <span class="badge bg-info">Completed</span>
-                                        <% } else { %>
-                                        <span class="badge bg-warning">Pending</span>
-                                        <% } %>
-                                    </p>
-                                    <p class="card-text mb-2">
-                                        <strong>Payment:</strong>
-                                        <% if (booking.paymentStatus === 'paid') { %>
-                                        <span class="badge bg-success">Paid</span>
-                                        <% } else if (booking.paymentStatus === 'refunded') { %>
-                                        <span class="badge bg-info">Refunded</span>
-                                        <% } else { %>
-                                        <span class="badge bg-warning">Pending</span>
-                                        <% } %>
-                                    </p>
-                                    <% if (booking.specialRequest) { %>
-                                    <p class="card-text mb-2">
-                                        <small class="text-muted">
-                                            <i class="fa fa-comment me-2"></i>
-                                            <strong>Special Request:</strong> <%= booking.specialRequest %>
-                                        </small>
-                                    </p>
-                                    <% } %>
-                                    <p class="card-text">
-                                        <small class="text-muted">
-                                            <i class="fa fa-clock me-2"></i>
-                                            Booked on <%= new Date(booking.createdAt).toLocaleDateString() %> at <%= new Date(booking.createdAt).toLocaleTimeString() %>
-                                        </small>
-                                    </p>
-                                    <p class="card-text">
-                                        <small class="text-muted">
-                                            <strong>Booking ID:</strong> #<%= booking._id.toString().substring(18, 24) %>
-                                        </small>
-                                    </p>
-                                    <div class="mt-3 d-flex gap-2">
-                                        <% if (booking.paymentStatus === 'pending') { %>
-                                        <button type="button" class="btn btn-primary btn-sm flex-fill pay-vnpay-btn" data-booking-id="<%= booking._id %>">
-                                            <i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay
-                                        </button>
-                                        <% } %>
-                                        <% if (booking.paymentStatus === 'paid') { %>
-                                        <a href="/booking/invoice/<%= booking._id %>" class="btn btn-success btn-sm flex-fill" target="_blank">
-                                            <i class="fa fa-file-invoice me-2"></i>Xem hóa đơn
-                                        </a>
-                                        <% } %>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <% }); %>
-            </div>
-            <% } else { %>
-            <div class="alert alert-info text-center">
-                <i class="fa fa-info-circle me-2"></i>
-                <h5>No bookings found</h5>
-                <p>You haven't made any bookings yet. <a href="/packages" class="alert-link">Browse our tours</a> to get started!</p>
-            </div>
-            <% } %>
+      <div class="container">
+        <% if (typeof error !== 'undefined' && error) { %>
+        <div
+          class="alert alert-danger alert-dismissible fade show"
+          role="alert"
+        >
+          <i class="fa fa-exclamation-circle me-2"></i><%= error %>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+          ></button>
         </div>
+        <% } %> <% if (typeof bookings !== 'undefined' && bookings.length > 0) {
+        %>
+        <div class="row g-4">
+          <% bookings.forEach(function(booking) { %>
+          <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+              <div class="row g-0">
+                <div class="col-md-4">
+                  <img
+                    src="<%= booking.tour && booking.tour.image ? booking.tour.image : '/static/img/packages-1.jpg' %>"
+                    class="img-fluid rounded-start h-100"
+                    alt="<%= booking.tour && booking.tour.title ? booking.tour.title : 'Tour' %>"
+                    style="object-fit: cover"
+                  />
+                </div>
+                <div class="col-md-8">
+                  <div class="card-body">
+                    <h5 class="card-title">
+                      <%= booking.tour && booking.tour.title ?
+                      booking.tour.title : 'Tour' %>
+                    </h5>
+                    <p class="card-text mb-2">
+                      <i class="fa fa-map-marker-alt me-2 text-primary"></i>
+                      <%= booking.tour && booking.tour.destination ?
+                      booking.tour.destination : 'N/A' %>
+                    </p>
+                    <p class="card-text mb-2">
+                      <i class="fa fa-calendar-alt me-2 text-primary"></i>
+                      <strong>Booking Date:</strong> <%= new
+                      Date(booking.bookingDate).toLocaleDateString() %>
+                    </p>
+                    <p class="card-text mb-2">
+                      <i class="fa fa-users me-2 text-primary"></i>
+                      <strong>Persons:</strong> <%= booking.numberOfPersons %>
+                    </p>
+                    <p class="card-text mb-2">
+                      <i class="fa fa-dollar-sign me-2 text-primary"></i>
+                      <strong>Total Price:</strong> $<%=
+                      booking.totalPrice.toFixed(2) %>
+                    </p>
+                    <p class="card-text mb-2">
+                      <strong>Status:</strong>
+                      <% if (booking.status === 'confirmed') { %>
+                      <span class="badge bg-success">Confirmed</span>
+                      <% } else if (booking.status === 'cancelled') { %>
+                      <span class="badge bg-danger">Cancelled</span>
+                      <% } else if (booking.status === 'completed') { %>
+                      <span class="badge bg-info">Completed</span>
+                      <% } else { %>
+                      <span class="badge bg-warning">Pending</span>
+                      <% } %>
+                    </p>
+                    <p class="card-text mb-2">
+                      <strong>Payment:</strong>
+                      <% if (booking.paymentStatus === 'paid') { %>
+                      <span class="badge bg-success">Paid</span>
+                      <% } else if (booking.paymentStatus === 'refunded') { %>
+                      <span class="badge bg-info">Refunded</span>
+                      <% } else { %>
+                      <span class="badge bg-warning">Pending</span>
+                      <% } %>
+                    </p>
+                    <% if (booking.specialRequest) { %>
+                    <p class="card-text mb-2">
+                      <small class="text-muted">
+                        <i class="fa fa-comment me-2"></i>
+                        <strong>Special Request:</strong> <%=
+                        booking.specialRequest %>
+                      </small>
+                    </p>
+                    <% } %>
+                    <p class="card-text">
+                      <small class="text-muted">
+                        <i class="fa fa-clock me-2"></i>
+                        Booked on <%= new
+                        Date(booking.createdAt).toLocaleDateString() %> at <%=
+                        new Date(booking.createdAt).toLocaleTimeString() %>
+                      </small>
+                    </p>
+                    <p class="card-text">
+                      <small class="text-muted">
+                        <strong>Booking ID:</strong> #<%=
+                        booking._id.toString().substring(18, 24) %>
+                      </small>
+                    </p>
+                    <div class="mt-3 d-flex gap-2">
+                      <% if (booking.paymentStatus === 'pending') { %>
+                      <button
+                        type="button"
+                        class="btn btn-primary btn-sm flex-fill pay-vnpay-btn"
+                        data-booking-id="<%= booking._id %>"
+                      >
+                        <i class="fa fa-credit-card me-2"></i>Thanh toán bằng
+                        VNPay
+                      </button>
+                      <% } %> <% if (booking.paymentStatus === 'paid') { %>
+                      <a
+                        href="/booking/invoice/<%= booking._id %>"
+                        class="btn btn-success btn-sm flex-fill"
+                        target="_blank"
+                      >
+                        <i class="fa fa-file-invoice me-2"></i>Xem hóa đơn
+                      </a>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <% }); %>
+        </div>
+        <% } else { %>
+        <div class="alert alert-info text-center">
+          <i class="fa fa-info-circle me-2"></i>
+          <h5>No bookings found</h5>
+          <p>
+            You haven't made any bookings yet.
+            <a href="/packages" class="alert-link">Browse our tours</a> to get
+            started!
+          </p>
+        </div>
+        <% } %>
+      </div>
     </div>
     <!-- Bookings End -->
 
     <%- include('partical/footer'); %>
 
     <script>
-        // VNPay payment button handlers
-        document.querySelectorAll('.pay-vnpay-btn').forEach(function(btn) {
-            btn.addEventListener('click', async function() {
-                const bookingId = this.getAttribute('data-booking-id');
-                const button = this;
-                
-                // Disable button and show loading
-                button.disabled = true;
-                button.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Đang xử lý...';
-                
-                try {
-                    const response = await fetch(`/booking/${bookingId}/payment/vnpay`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success && data.paymentUrl) {
-                        // Redirect to VNPay payment page
-                        window.location.href = data.paymentUrl;
-                    } else {
-                        alert('Có lỗi xảy ra: ' + (data.message || 'Không thể tạo link thanh toán'));
-                        button.disabled = false;
-                        button.innerHTML = '<i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay';
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Có lỗi xảy ra khi tạo link thanh toán. Vui lòng thử lại.');
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay';
-                }
-            });
+      // VNPay payment button handlers
+      document.querySelectorAll(".pay-vnpay-btn").forEach(function (btn) {
+        btn.addEventListener("click", async function () {
+          const bookingId = this.getAttribute("data-booking-id");
+          const button = this;
+
+          // Disable button and show loading
+          button.disabled = true;
+          button.innerHTML =
+            '<i class="fa fa-spinner fa-spin me-2"></i>Đang xử lý...';
+
+          try {
+            const response = await fetch(
+              `/booking/${bookingId}/payment/vnpay`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+
+            const data = await response.json();
+
+            if (data.success && data.paymentUrl) {
+              // Redirect to VNPay payment page
+              window.location.href = data.paymentUrl;
+            } else {
+              alert(
+                "Có lỗi xảy ra: " +
+                  (data.message || "Không thể tạo link thanh toán")
+              );
+              button.disabled = false;
+              button.innerHTML =
+                '<i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay';
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            alert("Có lỗi xảy ra khi tạo link thanh toán. Vui lòng thử lại.");
+            button.disabled = false;
+            button.innerHTML =
+              '<i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay';
+          }
         });
+      });
     </script>
-</body>
-
+  </body>
 </html>
-
