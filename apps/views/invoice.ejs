@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partical/head'); %>
+    <title>Hóa đơn #<%= booking._id.toString().substring(18, 24) %> - HereWeGo</title>
+    <style>
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+            }
+            .container {
+                max-width: 100% !important;
+            }
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .invoice-header {
+            border-bottom: 3px solid #0d6efd;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .invoice-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #0d6efd;
+            margin: 0;
+        }
+        .invoice-subtitle {
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .invoice-info {
+            margin-top: 30px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            width: 40%;
+        }
+        .info-value {
+            color: #212529;
+            width: 60%;
+            text-align: right;
+        }
+        .invoice-table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+        }
+        .invoice-table th {
+            background-color: #0d6efd;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .invoice-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .invoice-table tr:last-child td {
+            border-bottom: none;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .total-row {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .invoice-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+            text-align: center;
+            color: #6c757d;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .badge-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid py-5">
+        <div class="container">
+            <div class="invoice-container">
+                <!-- Invoice Header -->
+                <div class="invoice-header">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h1 class="invoice-title">HereWeGo</h1>
+                            <p class="invoice-subtitle">Tour & Travel Agency</p>
+                            <p class="mb-0">
+                                <small>Email: info@herewego.com</small><br>
+                                <small>Phone: +84 123 456 789</small>
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <h2 class="mb-0" style="color: #0d6efd;">HÓA ĐƠN</h2>
+                            <p class="mb-0">
+                                <strong>Mã HĐ:</strong> #<%= booking._id.toString().substring(18, 24) %><br>
+                                <strong>Ngày xuất:</strong> <%= new Date().toLocaleDateString('vi-VN') %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Information -->
+                <div class="invoice-info">
+                    <h5 class="mb-3" style="color: #0d6efd;">Thông tin Khách hàng</h5>
+                    <div class="info-row">
+                        <span class="info-label">Tên khách hàng:</span>
+                        <span class="info-value"><%= booking.guestName || (booking.user ? booking.user.firstName + ' ' + booking.user.lastName : 'N/A') %></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value"><%= booking.guestEmail || (booking.user ? booking.user.email : 'N/A') %></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Số điện thoại:</span>
+                        <span class="info-value"><%= booking.guestPhone || (booking.user ? (booking.user.phone || 'N/A') : 'N/A') %></span>
+                    </div>
+                </div>
+
+                <!-- Booking Information -->
+                <div class="invoice-info">
+                    <h5 class="mb-3" style="color: #0d6efd;">Thông tin Đặt tour</h5>
+                    <div class="info-row">
+                        <span class="info-label">Tour:</span>
+                        <span class="info-value"><%= booking.tour ? booking.tour.title : 'Tour đã bị xóa' %></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Điểm đến:</span>
+                        <span class="info-value"><%= booking.tour ? booking.tour.destination : 'N/A' %></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Ngày đặt tour:</span>
+                        <span class="info-value"><%= new Date(booking.bookingDate).toLocaleDateString('vi-VN') %></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Số người:</span>
+                        <span class="info-value"><%= booking.numberOfPersons %> người</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Trạng thái:</span>
+                        <span class="info-value">
+                            <% if (booking.status === 'confirmed') { %>
+                            <span class="status-badge badge-success">Đã xác nhận</span>
+                            <% } else if (booking.status === 'completed') { %>
+                            <span class="status-badge badge-info">Hoàn thành</span>
+                            <% } else { %>
+                            <span class="status-badge badge-success"><%= booking.status %></span>
+                            <% } %>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Payment Information -->
+                <div class="invoice-info">
+                    <h5 class="mb-3" style="color: #0d6efd;">Thông tin Thanh toán</h5>
+                    <div class="info-row">
+                        <span class="info-label">Phương thức thanh toán:</span>
+                        <span class="info-value">
+                            <% 
+                            let paymentMethodText = booking.paymentMethod || 'N/A';
+                            if (paymentMethodText === 'vnpay') paymentMethodText = 'VNPay';
+                            else if (paymentMethodText === 'cash') paymentMethodText = 'Tiền mặt';
+                            else if (paymentMethodText === 'card') paymentMethodText = 'Thẻ';
+                            else if (paymentMethodText === 'bank_transfer') paymentMethodText = 'Chuyển khoản';
+                            else if (paymentMethodText === 'online') paymentMethodText = 'Online';
+                            %>
+                            <%= paymentMethodText %>
+                        </span>
+                    </div>
+                    <% if (booking.paymentMethod === 'vnpay' && booking.vnpayTransactionNo) { %>
+                    <div class="info-row">
+                        <span class="info-label">Mã giao dịch VNPay:</span>
+                        <span class="info-value"><%= booking.vnpayTransactionNo %></span>
+                    </div>
+                    <% } %>
+                    <div class="info-row">
+                        <span class="info-label">Trạng thái thanh toán:</span>
+                        <span class="info-value">
+                            <span class="status-badge badge-success">Đã thanh toán</span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Ngày thanh toán:</span>
+                        <span class="info-value">
+                            <%= booking.updatedAt && booking.paymentStatus === 'paid' ? new Date(booking.updatedAt).toLocaleDateString('vi-VN') : new Date(booking.createdAt).toLocaleDateString('vi-VN') %>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Invoice Table -->
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>Mô tả</th>
+                            <th class="text-right">Số lượng</th>
+                            <th class="text-right">Đơn giá</th>
+                            <th class="text-right">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <strong><%= booking.tour ? booking.tour.title : 'Tour' %></strong><br>
+                                <small class="text-muted"><%= booking.tour ? booking.tour.destination : '' %></small>
+                            </td>
+                            <td class="text-right"><%= booking.numberOfPersons %> người</td>
+                            <td class="text-right">
+                                $<%= booking.tour ? ((booking.tour.discountPrice || booking.tour.price).toFixed(2)) : booking.totalPrice.toFixed(2) %>
+                            </td>
+                            <td class="text-right">$<%= booking.totalPrice.toFixed(2) %></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="3" class="text-right"><strong>TỔNG CỘNG:</strong></td>
+                            <td class="text-right">
+                                <strong style="color: #0d6efd; font-size: 20px;">
+                                    $<%= booking.totalPrice.toFixed(2) %>
+                                </strong>
+                                <% if (booking.vnpayAmount) { %>
+                                <br><small class="text-muted">(~<%= booking.vnpayAmount.toLocaleString('vi-VN') %> VND)</small>
+                                <% } %>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Invoice Footer -->
+                <div class="invoice-footer">
+                    <p class="mb-2">
+                        <strong>Cảm ơn bạn đã sử dụng dịch vụ của HereWeGo!</strong>
+                    </p>
+                    <p class="mb-0">
+                        <small>
+                            Hóa đơn này được tạo tự động. Vui lòng lưu lại để làm bằng chứng thanh toán.<br>
+                            Mọi thắc mắc vui lòng liên hệ: info@herewego.com hoặc +84 123 456 789
+                        </small>
+                    </p>
+                    <p class="mt-3 mb-0">
+                        <small class="text-muted">
+                            Ngày tạo: <%= new Date(booking.createdAt).toLocaleString('vi-VN') %>
+                        </small>
+                    </p>
+                </div>
+
+                <!-- Print Button -->
+                <div class="text-center mt-4 no-print">
+                    <button onclick="window.print()" class="btn btn-primary me-2">
+                        <i class="fa fa-print me-2"></i>In hóa đơn
+                    </button>
+                    <a href="/booking/my-bookings" class="btn btn-outline-secondary">
+                        <i class="fa fa-arrow-left me-2"></i>Quay lại
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto print option (optional)
+        // window.onload = function() {
+        //     setTimeout(function() {
+        //         window.print();
+        //     }, 500);
+        // }
+    </script>
+</body>
+
+</html>
+
