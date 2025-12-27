@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partical/head'); %>
+    <title><%= tour.title %> - HereWeGo</title>
+</head>
+
+<body>
+    <!-- Spinner Start -->
+    <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+    <!-- Spinner End -->
+
+    <% var activePage = 'packages'; %>
+    <%- include('partical/menu'); %>
+
+    <!-- Header Start -->
+    <div class="container-fluid bg-breadcrumb">
+        <div class="container text-center py-5" style="max-width: 900px;">
+            <h3 class="text-white display-3 mb-4"><%= tour.title %></h3>
+            <ol class="breadcrumb justify-content-center mb-0">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/packages">Packages</a></li>
+                <li class="breadcrumb-item active text-white">Tour Detail</li>
+            </ol>    
+        </div>
+    </div>
+    <!-- Header End -->
+
+    <!-- Tour Detail Start -->
+    <div class="container-fluid py-5">
+        <div class="container py-5">
+            <div class="row g-5">
+                <!-- Main Content -->
+                <div class="col-lg-8">
+                    <!-- Tour Image -->
+                    <div class="mb-4">
+                        <img src="<%= tour.image || '/static/img/packages-1.jpg' %>" 
+                             class="img-fluid w-100 rounded" 
+                             alt="<%= tour.title %>"
+                             style="max-height: 500px; object-fit: cover;">
+                    </div>
+
+                    <!-- Tour Title and Info -->
+                    <div class="mb-4">
+                        <h1 class="mb-3"><%= tour.title %></h1>
+                        <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                            <div>
+                                <i class="fa fa-map-marker-alt text-primary me-2"></i>
+                                <strong>Điểm đến:</strong> <%= tour.destination %>
+                            </div>
+                            <div>
+                                <i class="fa fa-calendar-alt text-primary me-2"></i>
+                                <strong>Thời gian:</strong> <%= tour.duration %> <%= tour.durationUnit || 'days' %>
+                            </div>
+                            <div>
+                                <i class="fa fa-users text-primary me-2"></i>
+                                <strong>Tối đa:</strong> <%= tour.maxPersons || 2 %> người
+                            </div>
+                            <div>
+                                <i class="fa fa-star text-warning me-2"></i>
+                                <strong>Đánh giá:</strong> <%= tour.rating || 5 %>/5
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <% for (let i = 0; i < Math.floor(tour.rating || 5); i++) { %>
+                            <i class="fa fa-star text-warning"></i>
+                            <% } %>
+                            <% for (let i = Math.floor(tour.rating || 5); i < 5; i++) { %>
+                            <i class="fa fa-star"></i>
+                            <% } %>
+                            <span class="ms-2 text-muted">(<%= tour.rating || 5 %>.0)</span>
+                        </div>
+                        <div>
+                            <span class="badge bg-primary"><%= tour.category || 'Tour' %></span>
+                            <% if (tour.isFeatured) { %>
+                            <span class="badge bg-warning">Nổi bật</span>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Price Section -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h4 class="card-title mb-3">Giá tour</h4>
+                            <div class="d-flex align-items-center">
+                                <% if (tour.discountPrice) { %>
+                                <div class="me-3">
+                                    <span class="text-decoration-line-through text-muted fs-5">$<%= tour.price.toFixed(2) %></span>
+                                    <span class="text-danger fs-3 fw-bold ms-2">$<%= tour.discountPrice.toFixed(2) %></span>
+                                    <span class="text-muted">/ người</span>
+                                </div>
+                                <span class="badge bg-danger">
+                                    Giảm <%= Math.round((1 - tour.discountPrice / tour.price) * 100) %>%
+                                </span>
+                                <% } else { %>
+                                <span class="text-primary fs-3 fw-bold">$<%= tour.price.toFixed(2) %></span>
+                                <span class="text-muted">/ người</span>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <h3 class="mb-3">Mô tả Tour</h3>
+                        <div class="tour-description">
+                            <%= tour.description ? tour.description.replace(/\n/g, '<br>') : (tour.shortDescription || 'Chưa có mô tả chi tiết.') %>
+                        </div>
+                    </div>
+
+                    <!-- Highlights -->
+                    <% if (tour.highlights && tour.highlights.length > 0) { %>
+                    <div class="mb-4">
+                        <h3 class="mb-3">Điểm nổi bật</h3>
+                        <ul class="list-unstyled">
+                            <% tour.highlights.forEach(function(highlight) { %>
+                            <li class="mb-2">
+                                <i class="fa fa-check-circle text-primary me-2"></i>
+                                <%= highlight %>
+                            </li>
+                            <% }); %>
+                        </ul>
+                    </div>
+                    <% } %>
+
+                    <!-- Includes -->
+                    <% if (tour.includes && tour.includes.length > 0) { %>
+                    <div class="mb-4">
+                        <h3 class="mb-3">Bao gồm</h3>
+                        <ul class="list-unstyled">
+                            <% tour.includes.forEach(function(item) { %>
+                            <li class="mb-2">
+                                <i class="fa fa-check text-success me-2"></i>
+                                <%= item %>
+                            </li>
+                            <% }); %>
+                        </ul>
+                    </div>
+                    <% } %>
+
+                    <!-- Excludes -->
+                    <% if (tour.excludes && tour.excludes.length > 0) { %>
+                    <div class="mb-4">
+                        <h3 class="mb-3">Không bao gồm</h3>
+                        <ul class="list-unstyled">
+                            <% tour.excludes.forEach(function(item) { %>
+                            <li class="mb-2">
+                                <i class="fa fa-times text-danger me-2"></i>
+                                <%= item %>
+                            </li>
+                            <% }); %>
+                        </ul>
+                    </div>
+                    <% } %>
+
+                    <!-- Itinerary -->
+                    <% if (tour.itinerary && tour.itinerary.length > 0) { %>
+                    <div class="mb-4">
+                        <h3 class="mb-3">Lịch trình</h3>
+                        <div class="accordion" id="itineraryAccordion">
+                            <% tour.itinerary.forEach(function(day, index) { %>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading<%= index %>">
+                                    <button class="accordion-button <%= index === 0 ? '' : 'collapsed' %>" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>">
+                                        <strong>Ngày <%= day.day || (index + 1) %>:</strong> <%= day.title || 'Chưa có tiêu đề' %>
+                                    </button>
+                                </h2>
+                                <div id="collapse<%= index %>" class="accordion-collapse collapse <%= index === 0 ? 'show' : '' %>" data-bs-parent="#itineraryAccordion">
+                                    <div class="accordion-body">
+                                        <%= day.description ? day.description.replace(/\n/g, '<br>') : 'Chưa có mô tả chi tiết.' %>
+                                    </div>
+                                </div>
+                            </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Booking Card -->
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h4 class="card-title mb-4">Đặt tour ngay</h4>
+                            
+                            <!-- Price -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Giá mỗi người:</span>
+                                    <strong class="text-primary">
+                                        <% if (tour.discountPrice) { %>
+                                        $<%= tour.discountPrice.toFixed(2) %>
+                                        <% } else { %>
+                                        $<%= tour.price.toFixed(2) %>
+                                        <% } %>
+                                    </strong>
+                                </div>
+                                <% if (tour.discountPrice) { %>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">Giá gốc:</small>
+                                    <small class="text-decoration-line-through text-muted">$<%= tour.price.toFixed(2) %></small>
+                                </div>
+                                <% } %>
+                            </div>
+
+                            <!-- Quick Info -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span><i class="fa fa-calendar-alt text-primary me-2"></i>Thời gian:</span>
+                                    <strong><%= tour.duration %> <%= tour.durationUnit || 'days' %></strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span><i class="fa fa-users text-primary me-2"></i>Tối đa:</span>
+                                    <strong><%= tour.maxPersons || 2 %> người</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span><i class="fa fa-map-marker-alt text-primary me-2"></i>Điểm đến:</span>
+                                    <strong><%= tour.destination %></strong>
+                                </div>
+                            </div>
+
+                            <!-- Book Now Button -->
+                            <a href="/booking?tour=<%= tour._id %>" class="btn btn-primary w-100 btn-lg mb-3">
+                                <i class="fa fa-calendar-check me-2"></i>Đặt tour ngay
+                            </a>
+
+                            <!-- Contact Info -->
+                            <div class="text-center">
+                                <small class="text-muted">
+                                    <i class="fa fa-phone me-2"></i>Hotline: +84 123 456 789<br>
+                                    <i class="fa fa-envelope me-2"></i>Email: info@herewego.com
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Share Section -->
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Chia sẻ tour</h5>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-primary btn-sm flex-fill" onclick="shareOnFacebook()">
+                                    <i class="fab fa-facebook me-2"></i>Facebook
+                                </button>
+                                <button class="btn btn-outline-info btn-sm flex-fill" onclick="shareOnTwitter()">
+                                    <i class="fab fa-twitter me-2"></i>Twitter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Tours -->
+            <% if (relatedTours && relatedTours.length > 0) { %>
+            <div class="mt-5">
+                <h3 class="mb-4">Tour liên quan</h3>
+                <div class="row g-4">
+                    <% relatedTours.forEach(function(relatedTour) { %>
+                    <div class="col-md-4">
+                        <div class="packages-item">
+                            <div class="packages-img">
+                                <img src="<%= relatedTour.image || '/static/img/packages-1.jpg' %>" 
+                                     class="img-fluid w-100 rounded-top" 
+                                     alt="<%= relatedTour.title %>">
+                                <div class="packages-info d-flex border border-start-0 border-end-0 position-absolute" style="width: 100%; bottom: 0; left: 0; z-index: 5;">
+                                    <small class="flex-fill text-center border-end py-2">
+                                        <i class="fa fa-map-marker-alt me-2"></i><%= relatedTour.destination %>
+                                    </small>
+                                    <small class="flex-fill text-center py-2">
+                                        <i class="fa fa-calendar-alt me-2"></i><%= relatedTour.duration %> <%= relatedTour.durationUnit || 'days' %>
+                                    </small>
+                                </div>
+                                <div class="packages-price py-2 px-4">
+                                    <% if (relatedTour.discountPrice) { %>
+                                    <span class="text-decoration-line-through text-white-50" style="font-size: 0.8em;">$<%= relatedTour.price.toFixed(2) %></span><br>
+                                    $<%= relatedTour.discountPrice.toFixed(2) %>
+                                    <% } else { %>
+                                    $<%= relatedTour.price.toFixed(2) %>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="packages-content bg-light">
+                                <div class="p-4 pb-0">
+                                    <h5 class="mb-0"><%= relatedTour.title %></h5>
+                                    <small class="text-uppercase"><%= relatedTour.category || 'Tour' %></small>
+                                    <div class="mb-3">
+                                        <% for (let i = 0; i < Math.floor(relatedTour.rating || 5); i++) { %>
+                                        <small class="fa fa-star text-primary"></small>
+                                        <% } %>
+                                    </div>
+                                    <p class="mb-4">
+                                        <%= relatedTour.shortDescription || (relatedTour.description ? (relatedTour.description.length > 100 ? relatedTour.description.substring(0, 100) + '...' : relatedTour.description) : '') %>
+                                    </p>
+                                </div>
+                                <div class="row bg-primary rounded-bottom mx-0">
+                                    <div class="col-6 text-start px-0">
+                                        <a href="/tour/<%= relatedTour._id %>" class="btn-hover btn text-white py-2 px-4">Xem chi tiết</a>
+                                    </div>
+                                    <div class="col-6 text-end px-0">
+                                        <a href="/booking?tour=<%= relatedTour._id %>" class="btn-hover btn text-white py-2 px-4">Đặt ngay</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <% }); %>
+                </div>
+            </div>
+            <% } %>
+        </div>
+    </div>
+    <!-- Tour Detail End -->
+
+    <%- include('partical/footer'); %>
+
+    <script>
+        function shareOnFacebook() {
+            const url = encodeURIComponent(window.location.href);
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+        }
+
+        function shareOnTwitter() {
+            const url = encodeURIComponent(window.location.href);
+            const text = encodeURIComponent('<%= tour.title %>');
+            window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+        }
+    </script>
+</body>
+
+</html>
+

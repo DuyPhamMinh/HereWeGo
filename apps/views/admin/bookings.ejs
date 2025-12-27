@@ -14,42 +14,56 @@
 
             <div class="container-fluid px-4 py-4">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-4">
-                    <h1 class="h3 mb-0">Bookings Management</h1>
-                    <button type="button" class="btn btn-primary btn-sm">
-                        <i class="fa fa-plus me-2"></i>New Booking
-                    </button>
+                    <h1 class="h3 mb-0">Quản lý Hóa đơn</h1>
+                    <p class="text-muted mb-0">Chế độ xem chỉ - Không thể chỉnh sửa hoặc xóa</p>
                 </div>
 
                 <div class="row mb-4">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="card">
                             <div class="card-body text-center">
                                 <h3 class="text-primary mb-0"><%= typeof totalBookingsCount !== 'undefined' ? totalBookingsCount : 0 %></h3>
-                                <small class="text-muted">Total Bookings</small>
+                                <small class="text-muted">Tổng hóa đơn</small>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="card">
                             <div class="card-body text-center">
                                 <h3 class="text-success mb-0"><%= typeof confirmedCount !== 'undefined' ? confirmedCount : 0 %></h3>
-                                <small class="text-muted">Confirmed</small>
+                                <small class="text-muted">Đã xác nhận</small>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="card">
                             <div class="card-body text-center">
                                 <h3 class="text-warning mb-0"><%= typeof pendingCount !== 'undefined' ? pendingCount : 0 %></h3>
-                                <small class="text-muted">Pending</small>
+                                <small class="text-muted">Chờ xử lý</small>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3 class="text-success mb-0"><%= typeof paidCount !== 'undefined' ? paidCount : 0 %></h3>
+                                <small class="text-muted">Đã thanh toán</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3 class="text-warning mb-0"><%= typeof paymentPendingCount !== 'undefined' ? paymentPendingCount : 0 %></h3>
+                                <small class="text-muted">Chờ thanh toán</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
                         <div class="card">
                             <div class="card-body text-center">
                                 <h3 class="text-danger mb-0"><%= typeof cancelledCount !== 'undefined' ? cancelledCount : 0 %></h3>
-                                <small class="text-muted">Cancelled</small>
+                                <small class="text-muted">Đã hủy</small>
                             </div>
                         </div>
                     </div>
@@ -62,28 +76,38 @@
                             <div class="col-md-4">
                                 <input type="text" class="form-control" name="search" placeholder="Search by name, email, phone..." value="<%= typeof search !== 'undefined' ? search : '' %>">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <select class="form-select" name="status">
-                                    <option value="">All Status</option>
-                                    <option value="pending" <%= typeof statusFilter !== 'undefined' && statusFilter === 'pending' ? 'selected' : '' %>>Pending</option>
-                                    <option value="confirmed" <%= typeof statusFilter !== 'undefined' && statusFilter === 'confirmed' ? 'selected' : '' %>>Confirmed</option>
-                                    <option value="cancelled" <%= typeof statusFilter !== 'undefined' && statusFilter === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
-                                    <option value="completed" <%= typeof statusFilter !== 'undefined' && statusFilter === 'completed' ? 'selected' : '' %>>Completed</option>
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="pending" <%= typeof statusFilter !== 'undefined' && statusFilter === 'pending' ? 'selected' : '' %>>Chờ xử lý</option>
+                                    <option value="confirmed" <%= typeof statusFilter !== 'undefined' && statusFilter === 'confirmed' ? 'selected' : '' %>>Đã xác nhận</option>
+                                    <option value="cancelled" <%= typeof statusFilter !== 'undefined' && statusFilter === 'cancelled' ? 'selected' : '' %>>Đã hủy</option>
+                                    <option value="completed" <%= typeof statusFilter !== 'undefined' && statusFilter === 'completed' ? 'selected' : '' %>>Hoàn thành</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" name="paymentStatus">
+                                    <option value="">Tất cả thanh toán</option>
+                                    <option value="pending" <%= typeof paymentStatusFilter !== 'undefined' && paymentStatusFilter === 'pending' ? 'selected' : '' %>>Chờ thanh toán</option>
+                                    <option value="paid" <%= typeof paymentStatusFilter !== 'undefined' && paymentStatusFilter === 'paid' ? 'selected' : '' %>>Đã thanh toán</option>
+                                    <option value="refunded" <%= typeof paymentStatusFilter !== 'undefined' && paymentStatusFilter === 'refunded' ? 'selected' : '' %>>Đã hoàn tiền</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
                                 <select class="form-select" name="limit">
-                                    <option value="10" <%= typeof limit !== 'undefined' && limit == 10 ? 'selected' : '' %>>10 per page</option>
-                                    <option value="25" <%= typeof limit !== 'undefined' && limit == 25 ? 'selected' : '' %>>25 per page</option>
-                                    <option value="50" <%= typeof limit !== 'undefined' && limit == 50 ? 'selected' : '' %>>50 per page</option>
+                                    <option value="10" <%= typeof limit !== 'undefined' && limit == 10 ? 'selected' : '' %>>10 / trang</option>
+                                    <option value="25" <%= typeof limit !== 'undefined' && limit == 25 ? 'selected' : '' %>>25 / trang</option>
+                                    <option value="50" <%= typeof limit !== 'undefined' && limit == 50 ? 'selected' : '' %>>50 / trang</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <button type="submit" class="btn btn-primary me-2">
-                                    <i class="fa fa-search me-2"></i>Search
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fa fa-search me-2"></i>Tìm kiếm
                                 </button>
-                                <a href="/admin/bookings" class="btn btn-outline-secondary">
-                                    <i class="fa fa-refresh me-2"></i>Reset
+                            </div>
+                            <div class="col-md-2">
+                                <a href="/admin/bookings" class="btn btn-outline-secondary w-100">
+                                    <i class="fa fa-refresh me-2"></i>Làm mới
                                 </a>
                             </div>
                         </form>
@@ -92,7 +116,7 @@
 
                 <div class="card">
                     <div class="card-header">
-                        <h6 class="mb-0">All Bookings</h6>
+                        <h6 class="mb-0">Danh sách Hóa đơn</h6>
                     </div>
                     <div class="card-body">
                         <% if (typeof error !== 'undefined' && error) { %>
@@ -106,15 +130,15 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Booking ID</th>
-                                        <th>Customer</th>
+                                        <th>Mã HĐ</th>
+                                        <th>Khách hàng</th>
                                         <th>Tour</th>
-                                        <th>Booking Date</th>
-                                        <th>Guests</th>
-                                        <th>Total</th>
-                                        <th>Status</th>
-                                        <th>Payment</th>
-                                        <th>Action</th>
+                                        <th>Ngày đặt</th>
+                                        <th>Số người</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thanh toán</th>
+                                        <th>Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -160,25 +184,20 @@
                                         </td>
                                         <td>
                                             <% if (booking.paymentStatus === 'paid') { %>
-                                            <span class="badge bg-success">Paid</span>
+                                            <span class="badge bg-success">Đã thanh toán</span>
+                                            <% if (booking.paymentMethod === 'vnpay') { %>
+                                            <br><small class="text-muted">VNPay</small>
+                                            <% } %>
                                             <% } else if (booking.paymentStatus === 'refunded') { %>
-                                            <span class="badge bg-info">Refunded</span>
+                                            <span class="badge bg-info">Đã hoàn tiền</span>
                                             <% } else { %>
-                                            <span class="badge bg-warning">Pending</span>
+                                            <span class="badge bg-warning">Chờ thanh toán</span>
                                             <% } %>
                                         </td>
                                         <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary" onclick="viewBooking('<%= booking._id %>')" title="View">
-                                                    <i class="fa fa-eye"></i>
-                                                </button>
-                                                <button class="btn btn-outline-success" onclick="updateStatus('<%= booking._id %>', '<%= booking.status %>')" title="Update Status">
-                                                    <i class="fa fa-edit"></i>
-                                                </button>
-                                                <button class="btn btn-outline-danger" onclick="deleteBooking('<%= booking._id %>', '<%= booking.guestName || (booking.user ? booking.user.firstName + ' ' + booking.user.lastName : '') %>')" title="Delete">
-                                                    <i class="fa fa-trash"></i>
-                                                </button>
-                                            </div>
+                                            <button class="btn btn-outline-primary btn-sm" onclick="viewBooking('<%= booking._id %>')" title="Xem chi tiết">
+                                                <i class="fa fa-eye me-1"></i>Xem
+                                            </button>
                                         </td>
                                     </tr>
                                     <% }); %>
@@ -192,14 +211,14 @@
                             <ul class="pagination justify-content-center">
                                 <% if (typeof currentPage !== 'undefined' && currentPage > 1) { %>
                                 <li class="page-item">
-                                    <a class="page-link" href="?page=<%= currentPage - 1 %><%= typeof search !== 'undefined' && search ? '&search=' + search : '' %><%= typeof statusFilter !== 'undefined' && statusFilter ? '&status=' + statusFilter : '' %><%= typeof limit !== 'undefined' ? '&limit=' + limit : '' %>">Previous</a>
+                                    <a class="page-link" href="?page=<%= currentPage - 1 %><%= typeof search !== 'undefined' && search ? '&search=' + encodeURIComponent(search) : '' %><%= typeof statusFilter !== 'undefined' && statusFilter ? '&status=' + statusFilter : '' %><%= typeof paymentStatusFilter !== 'undefined' && paymentStatusFilter ? '&paymentStatus=' + paymentStatusFilter : '' %><%= typeof limit !== 'undefined' ? '&limit=' + limit : '' %>">Trước</a>
                                 </li>
                                 <% } %>
 
                                 <% for (let i = 1; i <= totalPages; i++) { %>
                                 <% if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) { %>
                                 <li class="page-item <%= i === currentPage ? 'active' : '' %>">
-                                    <a class="page-link" href="?page=<%= i %><%= typeof search !== 'undefined' && search ? '&search=' + search : '' %><%= typeof statusFilter !== 'undefined' && statusFilter ? '&status=' + statusFilter : '' %><%= typeof limit !== 'undefined' ? '&limit=' + limit : '' %>"><%= i %></a>
+                                    <a class="page-link" href="?page=<%= i %><%= typeof search !== 'undefined' && search ? '&search=' + encodeURIComponent(search) : '' %><%= typeof statusFilter !== 'undefined' && statusFilter ? '&status=' + statusFilter : '' %><%= typeof paymentStatusFilter !== 'undefined' && paymentStatusFilter ? '&paymentStatus=' + paymentStatusFilter : '' %><%= typeof limit !== 'undefined' ? '&limit=' + limit : '' %>"><%= i %></a>
                                 </li>
                                 <% } else if (i === currentPage - 3 || i === currentPage + 3) { %>
                                 <li class="page-item disabled">
@@ -210,7 +229,7 @@
 
                                 <% if (typeof currentPage !== 'undefined' && currentPage < totalPages) { %>
                                 <li class="page-item">
-                                    <a class="page-link" href="?page=<%= currentPage + 1 %><%= typeof search !== 'undefined' && search ? '&search=' + search : '' %><%= typeof statusFilter !== 'undefined' && statusFilter ? '&status=' + statusFilter : '' %><%= typeof limit !== 'undefined' ? '&limit=' + limit : '' %>">Next</a>
+                                    <a class="page-link" href="?page=<%= currentPage + 1 %><%= typeof search !== 'undefined' && search ? '&search=' + encodeURIComponent(search) : '' %><%= typeof statusFilter !== 'undefined' && statusFilter ? '&status=' + statusFilter : '' %><%= typeof paymentStatusFilter !== 'undefined' && paymentStatusFilter ? '&paymentStatus=' + paymentStatusFilter : '' %><%= typeof limit !== 'undefined' ? '&limit=' + limit : '' %>">Sau</a>
                                 </li>
                                 <% } %>
                             </ul>
@@ -218,7 +237,7 @@
                         <% } %>
                         <% } else { %>
                         <div class="alert alert-info text-center">
-                            <i class="fa fa-info-circle me-2"></i>No bookings found.
+                            <i class="fa fa-info-circle me-2"></i>Không tìm thấy hóa đơn nào.
                         </div>
                         <% } %>
                     </div>
@@ -232,60 +251,15 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Booking Details</h5>
+                    <h5 class="modal-title">Chi tiết Hóa đơn</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="bookingDetails">
                     <!-- Booking details will be loaded here -->
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Update Status Modal -->
-    <div class="modal fade" id="updateStatusModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Update Booking Status</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                 </div>
-                <form id="updateStatusForm">
-                    <div class="modal-body">
-                        <input type="hidden" id="statusBookingId" name="bookingId">
-                        <div class="mb-3">
-                            <label class="form-label">Status</label>
-                            <select class="form-select" id="bookingStatus" name="status" required>
-                                <option value="pending">Pending</option>
-                                <option value="confirmed">Confirmed</option>
-                                <option value="cancelled">Cancelled</option>
-                                <option value="completed">Completed</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Payment Status</label>
-                            <select class="form-select" id="paymentStatus" name="paymentStatus" required>
-                                <option value="pending">Pending</option>
-                                <option value="paid">Paid</option>
-                                <option value="refunded">Refunded</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Payment Method</label>
-                            <select class="form-select" id="paymentMethod" name="paymentMethod">
-                                <option value="">Select Payment Method</option>
-                                <option value="cash">Cash</option>
-                                <option value="card">Card</option>
-                                <option value="bank_transfer">Bank Transfer</option>
-                                <option value="online">Online</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Update</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -299,51 +273,124 @@
                 const response = await fetch(`/admin/bookings/${bookingId}`);
                 const booking = await response.json();
                 
+                // Format payment method
+                let paymentMethodText = booking.paymentMethod || 'Chưa xác định';
+                if (paymentMethodText === 'vnpay') {
+                    paymentMethodText = 'VNPay';
+                } else if (paymentMethodText === 'cash') {
+                    paymentMethodText = 'Tiền mặt';
+                } else if (paymentMethodText === 'card') {
+                    paymentMethodText = 'Thẻ';
+                } else if (paymentMethodText === 'bank_transfer') {
+                    paymentMethodText = 'Chuyển khoản';
+                } else if (paymentMethodText === 'online') {
+                    paymentMethodText = 'Online';
+                }
+                
+                // Format status
+                let statusText = booking.status;
+                if (statusText === 'pending') statusText = 'Chờ xử lý';
+                else if (statusText === 'confirmed') statusText = 'Đã xác nhận';
+                else if (statusText === 'cancelled') statusText = 'Đã hủy';
+                else if (statusText === 'completed') statusText = 'Hoàn thành';
+                
+                // Format payment status
+                let paymentStatusText = booking.paymentStatus;
+                if (paymentStatusText === 'pending') paymentStatusText = 'Chờ thanh toán';
+                else if (paymentStatusText === 'paid') paymentStatusText = 'Đã thanh toán';
+                else if (paymentStatusText === 'refunded') paymentStatusText = 'Đã hoàn tiền';
+                
                 const details = `
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <strong>Booking ID:</strong> #${booking._id.toString().substring(18, 24)}
+                        <div class="col-12 mb-3">
+                            <h6 class="text-primary">Thông tin Hóa đơn</h6>
+                            <hr>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <strong>Status:</strong> 
-                            <span class="badge bg-${booking.status === 'confirmed' ? 'success' : booking.status === 'cancelled' ? 'danger' : booking.status === 'completed' ? 'info' : 'warning'}">${booking.status}</span>
+                            <strong>Mã Hóa đơn:</strong> #${booking._id.toString().substring(18, 24)}
                         </div>
                         <div class="col-md-6 mb-3">
-                            <strong>Customer Name:</strong> ${booking.guestName}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Email:</strong> ${booking.guestEmail}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Phone:</strong> ${booking.guestPhone || 'N/A'}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Booking Date:</strong> ${new Date(booking.bookingDate).toLocaleDateString()}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Number of Persons:</strong> ${booking.numberOfPersons}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Total Price:</strong> $${booking.totalPrice.toFixed(2)}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Payment Status:</strong> 
-                            <span class="badge bg-${booking.paymentStatus === 'paid' ? 'success' : booking.paymentStatus === 'refunded' ? 'info' : 'warning'}">${booking.paymentStatus}</span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Payment Method:</strong> ${booking.paymentMethod || 'N/A'}
+                            <strong>Trạng thái:</strong> 
+                            <span class="badge bg-${booking.status === 'confirmed' ? 'success' : booking.status === 'cancelled' ? 'danger' : booking.status === 'completed' ? 'info' : 'warning'}">${statusText}</span>
                         </div>
                         <div class="col-12 mb-3">
-                            <strong>Tour:</strong> ${booking.tour ? booking.tour.title : 'Tour deleted'}
+                            <h6 class="text-primary">Thông tin Khách hàng</h6>
+                            <hr>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Tên khách hàng:</strong> ${booking.guestName || (booking.user ? booking.user.firstName + ' ' + booking.user.lastName : 'N/A')}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Email:</strong> ${booking.guestEmail || (booking.user ? booking.user.email : 'N/A')}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Số điện thoại:</strong> ${booking.guestPhone || (booking.user ? (booking.user.phone || 'N/A') : 'N/A')}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Ngày đặt tour:</strong> ${new Date(booking.bookingDate).toLocaleDateString('vi-VN')}
                         </div>
                         <div class="col-12 mb-3">
-                            <strong>Special Request:</strong> ${booking.specialRequest || 'None'}
+                            <h6 class="text-primary">Thông tin Tour</h6>
+                            <hr>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Tour:</strong> ${booking.tour ? booking.tour.title : 'Tour đã bị xóa'}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Điểm đến:</strong> ${booking.tour ? booking.tour.destination : 'N/A'}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Số người:</strong> ${booking.numberOfPersons} người
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Tổng tiền:</strong> 
+                            <span class="text-primary fw-bold">$${booking.totalPrice.toFixed(2)}</span>
+                            ${booking.vnpayAmount ? `<br><small class="text-muted">(~${booking.vnpayAmount.toLocaleString('vi-VN')} VND)</small>` : ''}
                         </div>
                         <div class="col-12 mb-3">
-                            <strong>Notes:</strong> ${booking.notes || 'None'}
+                            <h6 class="text-primary">Thông tin Thanh toán</h6>
+                            <hr>
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Trạng thái thanh toán:</strong> 
+                            <span class="badge bg-${booking.paymentStatus === 'paid' ? 'success' : booking.paymentStatus === 'refunded' ? 'info' : 'warning'}">${paymentStatusText}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Phương thức thanh toán:</strong> ${paymentMethodText}
+                        </div>
+                        ${booking.paymentMethod === 'vnpay' && booking.vnpayTransactionNo ? `
+                        <div class="col-md-6 mb-3">
+                            <strong>Mã giao dịch VNPay:</strong> ${booking.vnpayTransactionNo}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Mã tham chiếu:</strong> ${booking.vnpayTxnRef || 'N/A'}
+                        </div>
+                        ${booking.vnpayResponseCode ? `
+                        <div class="col-md-6 mb-3">
+                            <strong>Mã phản hồi:</strong> ${booking.vnpayResponseCode}
+                        </div>
+                        ` : ''}
+                        ` : ''}
+                        ${booking.specialRequest ? `
                         <div class="col-12 mb-3">
-                            <strong>Created:</strong> ${new Date(booking.createdAt).toLocaleString()}
+                            <h6 class="text-primary">Yêu cầu đặc biệt</h6>
+                            <hr>
+                            <p>${booking.specialRequest}</p>
+                        </div>
+                        ` : ''}
+                        ${booking.notes ? `
+                        <div class="col-12 mb-3">
+                            <h6 class="text-primary">Ghi chú</h6>
+                            <hr>
+                            <p>${booking.notes}</p>
+                        </div>
+                        ` : ''}
+                        <div class="col-12 mb-3">
+                            <small class="text-muted">
+                                <strong>Ngày tạo:</strong> ${new Date(booking.createdAt).toLocaleString('vi-VN')}
+                                ${booking.updatedAt && booking.updatedAt.toString() !== booking.createdAt.toString() ? 
+                                    `<br><strong>Cập nhật lần cuối:</strong> ${new Date(booking.updatedAt).toLocaleString('vi-VN')}` : ''}
+                            </small>
                         </div>
                     </div>
                 `;
@@ -352,88 +399,7 @@
                 const modal = new bootstrap.Modal(document.getElementById('viewBookingModal'));
                 modal.show();
             } catch (error) {
-                alert('Error loading booking: ' + error.message);
-            }
-        }
-
-        // Update Status
-        async function updateStatus(bookingId, currentStatus) {
-            try {
-                const response = await fetch(`/admin/bookings/${bookingId}`);
-                const booking = await response.json();
-                
-                document.getElementById('statusBookingId').value = booking._id;
-                document.getElementById('bookingStatus').value = booking.status;
-                document.getElementById('paymentStatus').value = booking.paymentStatus;
-                document.getElementById('paymentMethod').value = booking.paymentMethod || '';
-                
-                const modal = new bootstrap.Modal(document.getElementById('updateStatusModal'));
-                modal.show();
-            } catch (error) {
-                alert('Error loading booking: ' + error.message);
-            }
-        }
-
-        // Submit Update Status Form
-        document.getElementById('updateStatusForm')?.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const bookingId = document.getElementById('statusBookingId').value;
-            const status = document.getElementById('bookingStatus').value;
-            const paymentStatus = document.getElementById('paymentStatus').value;
-            const paymentMethod = document.getElementById('paymentMethod').value;
-            
-            try {
-                // Update status
-                await fetch(`/admin/bookings/${bookingId}/status`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ status: status })
-                });
-                
-                // Update payment status
-                await fetch(`/admin/bookings/${bookingId}/payment-status`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        paymentStatus: paymentStatus,
-                        paymentMethod: paymentMethod || undefined
-                    })
-                });
-                
-                alert('Booking status updated successfully!');
-                bootstrap.Modal.getInstance(document.getElementById('updateStatusModal')).hide();
-                location.reload();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        });
-
-        // Delete Booking
-        async function deleteBooking(bookingId, customerName) {
-            if (!confirm(`Are you sure you want to delete booking for "${customerName}"? This action cannot be undone.`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/admin/bookings/${bookingId}`, {
-                    method: 'DELETE'
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('Booking deleted successfully!');
-                    location.reload();
-                } else {
-                    alert('Error: ' + (result.error || 'Failed to delete booking'));
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
+                alert('Lỗi khi tải thông tin hóa đơn: ' + error.message);
             }
         }
     </script>

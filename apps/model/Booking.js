@@ -57,7 +57,27 @@ const bookingSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["cash", "card", "bank_transfer", "online"],
+      enum: ["cash", "card", "bank_transfer", "online", "vnpay"],
+    },
+    // VNPay transaction information
+    vnpayTransactionId: {
+      type: String,
+      trim: true,
+    },
+    vnpayTxnRef: {
+      type: String,
+      trim: true,
+    },
+    vnpayAmount: {
+      type: Number,
+    },
+    vnpayResponseCode: {
+      type: String,
+      trim: true,
+    },
+    vnpayTransactionNo: {
+      type: String,
+      trim: true,
     },
     notes: {
       type: String,
