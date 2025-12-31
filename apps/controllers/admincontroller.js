@@ -47,6 +47,127 @@ router.get("/transactions", function (req, res) {
   res.render("admin/transactions.ejs", { activePage: 'transactions' });
 });
 
+// Chat Dashboard - Quản lý danh sách hội thoại
+router.get("/chats", async function (req, res) {
+  try {
+    const { Conversation, Message } = require(__dirname + "/../model/Chat");
+    const User = require(__dirname + "/../model/User");
+    
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const search = req.query.search || '';
+    const statusFilter = req.query.status || ''; // active, inactive, all
+    
+    // Build query
+    let query = { isActive: statusFilter !== 'inactive' };
+    if (statusFilter === 'inactive') {
+      query.isActive = false;
+    }
+    
+    // Search by participant name or email
+    if (search) {
+      // We'll filter after fetching since participants is an array
+      // For now, get all and filter in memory (can be optimized later)
+    }
+    
+    // Get total count
+    const totalConversations = await Conversation.countDocuments(query);
+    
+    // Get conversations with pagination
+    let conversations = await Conversation.find(query)
+      .sort({ lastMessageAt: -1 })
+      .limit(limit)
+      .skip((page - 1) * limit);
+    
+    // Filter by search if provided
+    if (search) {
+      conversations = conversations.filter(conv => {
+        return conv.participants.some(p => 
+          p.userName.toLowerCase().includes(search.toLowerCase()) ||
+          p.userEmail.toLowerCase().includes(search.toLowerCase())
+        );
+      });
+    }
+    
+    // Get message counts for each conversation
+    for (let conv of conversations) {
+      const messageCount = await Message.countDocuments({ conversationId: conv._id });
+      conv.messageCount = messageCount;
+      
+      // Get unread count
+      const unreadCount = await Message.countDocuments({ 
+        conversationId: conv._id,
+        isRead: false
+      });
+      conv.unreadCount = unreadCount;
+    }
+    
+    const totalPages = Math.ceil(totalConversations / limit);
+    
+    // Get statistics
+    const totalChatsCount = await Conversation.countDocuments({ isActive: true });
+    const activeChatsCount = await Conversation.countDocuments({ isActive: true });
+    const inactiveChatsCount = await Conversation.countDocuments({ isActive: false });
+    const totalMessagesCount = await Message.countDocuments();
+    const unreadMessagesCount = await Message.countDocuments({ isRead: false });
+    
+    res.render("admin/chats.ejs", {
+      activePage: 'chats',
+      conversations: conversations,
+      currentPage: page,
+      totalPages: totalPages,
+      totalConversations: totalConversations,
+      search: search,
+      statusFilter: statusFilter,
+      limit: limit,
+      totalChatsCount: totalChatsCount,
+      activeChatsCount: activeChatsCount,
+      inactiveChatsCount: inactiveChatsCount,
+      totalMessagesCount: totalMessagesCount,
+      unreadMessagesCount: unreadMessagesCount,
+      currentUser: req.session.user
+    });
+  } catch (error) {
+    console.error("Error fetching chats:", error);
+    res.render("admin/chats.ejs", {
+      activePage: 'chats',
+      conversations: [],
+      error: "Error loading conversations",
+      totalChatsCount: 0,
+      activeChatsCount: 0,
+      inactiveChatsCount: 0,
+      totalMessagesCount: 0,
+      unreadMessagesCount: 0
+    });
+  }
+});
+
+// Get conversation detail with messages
+router.get("/chats/:conversationId", async function (req, res) {
+  try {
+    const { Conversation, Message } = require(__dirname + "/../model/Chat");
+    const conversationId = req.params.conversationId;
+    
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    
+    // Get messages
+    const messages = await Message.find({ conversationId: conversationId })
+      .sort({ createdAt: 1 })
+      .limit(100);
+    
+    res.json({
+      conversation: conversation,
+      messages: messages
+    });
+  } catch (error) {
+    console.error("Error fetching conversation:", error);
+    res.status(500).json({ error: "Error loading conversation" });
+  }
+});
+
 // Bookings Management
 router.get("/bookings", async function (req, res) {
   try {

@@ -30,6 +30,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'chats' ? ' active' : '' %>" href="/admin/chats">
+                        <i class="fa fa-comments me-2"></i> Chat Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'tours' ? ' active' : '' %>" href="/admin/tours">
                         <i class="fa fa-map-marked-alt me-2"></i> Tours
                     </a>

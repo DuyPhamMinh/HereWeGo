@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Chat Dashboard - Admin Dashboard</title>
+    <%- include('partical/head'); %>
+    <style>
+        .conversation-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .conversation-row:hover {
+            background-color: #f8f9fa;
+        }
+        .unread-badge {
+            background-color: #dc3545;
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .message-preview {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <%- include('partical/sidebar'); %>
+        <main class="main-content">
+            <%- include('partical/navbar'); %>
+
+            <div class="container-fluid px-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-4">
+                    <h1 class="h3 mb-0">Chat Dashboard</h1>
+                    <p class="text-muted mb-0">Quản lý danh sách hội thoại</p>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3 class="text-primary mb-0"><%= typeof totalChatsCount !== 'undefined' ? totalChatsCount : 0 %></h3>
+                                <small class="text-muted">Tổng hội thoại</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3 class="text-success mb-0"><%= typeof activeChatsCount !== 'undefined' ? activeChatsCount : 0 %></h3>
+                                <small class="text-muted">Hội thoại đang hoạt động</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3 class="text-info mb-0"><%= typeof totalMessagesCount !== 'undefined' ? totalMessagesCount : 0 %></h3>
+                                <small class="text-muted">Tổng tin nhắn</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3 class="text-warning mb-0"><%= typeof unreadMessagesCount !== 'undefined' ? unreadMessagesCount : 0 %></h3>
+                                <small class="text-muted">Tin nhắn chưa đọc</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filter -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form method="GET" action="/admin/chats" class="row g-3">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" name="search" placeholder="Tìm kiếm theo tên hoặc email..." value="<%= typeof search !== 'undefined' ? search : '' %>">
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" name="status">
+                                    <option value="">Tất cả</option>
+                                    <option value="active" <%= typeof statusFilter !== 'undefined' && statusFilter === 'active' ? 'selected' : '' %>>Đang hoạt động</option>
+                                    <option value="inactive" <%= typeof statusFilter !== 'undefined' && statusFilter === 'inactive' ? 'selected' : '' %>>Đã đóng</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" name="limit">
+                                    <option value="10" <%= typeof limit !== 'undefined' && limit == 10 ? 'selected' : '' %>>10 / trang</option>
+                                    <option value="20" <%= typeof limit !== 'undefined' && limit == 20 ? 'selected' : '' %>>20 / trang</option>
+                                    <option value="50" <%= typeof limit !== 'undefined' && limit == 50 ? 'selected' : '' %>>50 / trang</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fa fa-search me-2"></i>Tìm kiếm
+                                </button>
+                            </div>
+                            <div class="col-md-2">
+                                <a href="/admin/chats" class="btn btn-outline-secondary w-100">
+                                    <i class="fa fa-refresh me-2"></i>Làm mới
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Conversations Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Danh sách Hội thoại</h6>
+                    </div>
+                    <div class="card-body">
+                        <% if (typeof error !== 'undefined' && error) { %>
+                        <div class="alert alert-danger">
+                            <i class="fa fa-exclamation-circle me-2"></i><%= error %>
+                        </div>
+                        <% } %>
+
+                        <% if (typeof conversations !== 'undefined' && conversations.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Người dùng</th>
+                                        <th>Email</th>
+                                        <th>Tin nhắn cuối</th>
+                                        <th>Số tin nhắn</th>
+                                        <th>Chưa đọc</th>
+                                        <th>Thời gian</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% conversations.forEach(function(conversation) { %>
+                                    <% 
+                                        // Tìm user (không phải admin) trong participants
+                                        const userParticipant = conversation.participants.find(p => {
+                                            // Giả sử admin có userId là "admin_support" hoặc email chứa "admin"
+                                            return !p.userEmail.includes('admin') && !p.userEmail.includes('@herewego.com');
+                                        }) || conversation.participants[0];
+                                    %>
+                                    <tr class="conversation-row" onclick="viewConversation('<%= conversation._id %>')">
+                                        <td>#<%= conversation._id.toString().substring(18, 24) %></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 12px;">
+                                                    <%= userParticipant ? userParticipant.userName.charAt(0).toUpperCase() : 'U' %>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold"><%= userParticipant ? userParticipant.userName : 'Unknown User' %></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small><%= userParticipant ? userParticipant.userEmail : 'N/A' %></small>
+                                        </td>
+                                        <td>
+                                            <div class="message-preview">
+                                                <%= conversation.lastMessage || 'Chưa có tin nhắn' %>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info"><%= conversation.messageCount || 0 %></span>
+                                        </td>
+                                        <td>
+                                            <% if (conversation.unreadCount > 0) { %>
+                                                <span class="unread-badge"><%= conversation.unreadCount %></span>
+                                            <% } else { %>
+                                                <span class="text-muted">-</span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                <%= new Date(conversation.lastMessageAt).toLocaleString('vi-VN', { 
+                                                    year: 'numeric', 
+                                                    month: '2-digit', 
+                                                    day: '2-digit',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                }) %>
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <% if (conversation.isActive) { %>
+                                                <span class="badge bg-success">Đang hoạt động</span>
+                                            <% } else { %>
+                                                <span class="badge bg-secondary">Đã đóng</span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); viewConversation('<%= conversation._id %>')">
+                                                <i class="fa fa-eye me-1"></i>Xem
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center">
+                                <% if (typeof currentPage !== 'undefined' && currentPage > 1) { %>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=<%= currentPage - 1 %><%= typeof search !== 'undefined' && search ? '&search=' + search : '' %><%= typeof statusFilter !== 'undefined' && statusFilter ? '&status=' + statusFilter : '' %><%= typeof limit !== 'undefined' ? '&limit=' + limit : '' %>">Trước</a>
+                                </li>
+                                <% } %>
+                                
+                                <% for (let i = 1; i <= totalPages; i++) { %>
+                                    <% if (i === currentPage) { %>
+                                    <li class="page-item active">
+                                        <span class="page-link"><%= i %></span>
+                                    </li>
+                                    <% } else if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) { %>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=<%= i %><%= typeof search !== 'undefined' && search ? '&search=' + search : '' %><%= typeof statusFilter !== 'undefined' && statusFilter ? '&status=' + statusFilter : '' %><%= typeof limit !== 'undefined' ? '&limit=' + limit : '' %>"><%= i %></a>
+                                    </li>
+                                    <% } else if (i === currentPage - 3 || i === currentPage + 3) { %>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                    <% } %>
+                                <% } %>
+                                
+                                <% if (typeof currentPage !== 'undefined' && currentPage < totalPages) { %>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=<%= currentPage + 1 %><%= typeof search !== 'undefined' && search ? '&search=' + search : '' %><%= typeof statusFilter !== 'undefined' && statusFilter ? '&status=' + statusFilter : '' %><%= typeof limit !== 'undefined' ? '&limit=' + limit : '' %>">Sau</a>
+                                </li>
+                                <% } %>
+                            </ul>
+                        </nav>
+                        <% } %>
+
+                        <% } else { %>
+                        <div class="text-center py-5">
+                            <i class="fa fa-comments fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Chưa có hội thoại nào</p>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Conversation Detail Modal -->
+    <div class="modal fade" id="conversationModal" tabindex="-1" aria-labelledby="conversationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="conversationModalLabel">Chi tiết Hội thoại</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="conversationModalBody">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/admin/js/admin.js"></script>
+    <script>
+        function viewConversation(conversationId) {
+            const modal = new bootstrap.Modal(document.getElementById('conversationModal'));
+            const modalBody = document.getElementById('conversationModalBody');
+            
+            // Show loading
+            modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+            modal.show();
+            
+            // Fetch conversation details
+            fetch(`/admin/chats/${conversationId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    const conversation = data.conversation;
+                    const messages = data.messages;
+                    
+                    // Find user participant
+                    const userParticipant = conversation.participants.find(p => 
+                        !p.userEmail.includes('admin') && !p.userEmail.includes('@herewego.com')
+                    ) || conversation.participants[0];
+                    
+                    let html = `
+                        <div class="mb-3">
+                            <h6>Thông tin Hội thoại</h6>
+                            <p class="mb-1"><strong>Người dùng:</strong> ${userParticipant ? userParticipant.userName : 'Unknown'}</p>
+                            <p class="mb-1"><strong>Email:</strong> ${userParticipant ? userParticipant.userEmail : 'N/A'}</p>
+                            <p class="mb-1"><strong>Trạng thái:</strong> ${conversation.isActive ? '<span class="badge bg-success">Đang hoạt động</span>' : '<span class="badge bg-secondary">Đã đóng</span>'}</p>
+                            <p class="mb-0"><strong>Tổng tin nhắn:</strong> ${messages.length}</p>
+                        </div>
+                        <hr>
+                        <h6>Tin nhắn</h6>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                    `;
+                    
+                    if (messages.length > 0) {
+                        messages.forEach(msg => {
+                            // Check if sender is admin by checking if senderName contains "Admin" or "Support"
+                            const isAdmin = msg.senderName && (msg.senderName.toLowerCase().includes('admin') || msg.senderName.toLowerCase().includes('support'));
+                            html += `
+                                <div class="mb-3 p-2 ${isAdmin ? 'bg-light' : ''}" style="border-left: 3px solid ${isAdmin ? '#007bff' : '#28a745'};">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>${msg.senderName || 'Unknown'}</strong>
+                                        <small class="text-muted">${new Date(msg.createdAt).toLocaleString('vi-VN')}</small>
+                                    </div>
+                                    <p class="mb-0 mt-1">${msg.content}</p>
+                                    ${msg.isRead ? '<small class="text-muted"><i class="fa fa-check me-1"></i>Đã đọc</small>' : '<small class="text-warning"><i class="fa fa-envelope me-1"></i>Chưa đọc</small>'}
+                                </div>
+                            `;
+                        });
+                    } else {
+                        html += '<p class="text-muted text-center">Chưa có tin nhắn nào</p>';
+                    }
+                    
+                    html += '</div>';
+                    modalBody.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    modalBody.innerHTML = '<div class="alert alert-danger">Có lỗi xảy ra khi tải hội thoại</div>';
+                });
+        }
+    </script>
+</body>
+
+</html>
+
