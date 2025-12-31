@@ -257,33 +257,131 @@
 
     <!-- Conversation Detail Modal -->
     <div class="modal fade" id="conversationModal" tabindex="-1" aria-labelledby="conversationModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content" style="height: 80vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <h5 class="modal-title" id="conversationModalLabel">Chi tiết Hội thoại</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" id="conversationModalBody">
+                <div class="modal-body" id="conversationModalBody" style="flex: 1; overflow-y: auto;">
                     <div class="text-center py-4">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
                     </div>
                 </div>
+                <div class="modal-footer" id="conversationModalFooter" style="display: none;">
+                    <div class="w-100">
+                        <form onsubmit="event.preventDefault(); return false;" style="display: contents;">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="adminReplyInput" placeholder="Nhập tin nhắn trả lời..." autocomplete="off">
+                                <button class="btn btn-primary" type="button" id="adminSendBtn">
+                                    <i class="fa fa-paper-plane me-1"></i>Gửi
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <style>
+        .admin-message-wrapper {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .admin-message-wrapper.user-message {
+            justify-content: flex-start;
+        }
+        .admin-message-wrapper.admin-message {
+            justify-content: flex-end;
+        }
+        .admin-message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+        .admin-message-wrapper.user-message .admin-message-bubble {
+            background: #e9ecef;
+            border-bottom-left-radius: 4px;
+        }
+        .admin-message-wrapper.admin-message .admin-message-bubble {
+            background: #007bff;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .admin-message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+        .admin-message-wrapper.admin-message .admin-message-time {
+            text-align: right;
+        }
+    </style>
+
+    <!-- Socket.IO Client -->
+    <script src="/socket.io/socket.io.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/admin/js/admin.js"></script>
     <script>
+        let currentConversationId = null;
+        let adminSocket = null;
+        let currentAdminId = null;
+
+        // Initialize Socket.IO for admin
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get admin ID from session (you may need to pass this from server)
+            currentAdminId = '<%= typeof currentUser !== "undefined" && currentUser ? currentUser.id : "" %>';
+            
+            if (currentAdminId && currentAdminId !== '') {
+                adminSocket = io();
+                
+                adminSocket.on('connect', () => {
+                    console.log('Admin connected to chat server');
+                });
+
+                // Listen for new messages
+                adminSocket.on('new_message', (messageData) => {
+                    if (messageData.conversationId === currentConversationId) {
+                        // Check if message is from admin (handle both ObjectId and string)
+                        const msgSenderId = messageData.senderId ? messageData.senderId.toString() : String(messageData.senderId || '');
+                        const adminIdStr = String(currentAdminId || '');
+                        const isAdminMsg = msgSenderId === adminIdStr;
+                        addMessageToModal(messageData, isAdminMsg);
+                    }
+                });
+
+                // Listen for conversation updates
+                adminSocket.on('conversation_updated', (data) => {
+                    // Don't reload page - just log the update
+                    // The conversation list will be updated when modal is closed and reopened
+                    console.log('Conversation updated:', data.conversationId);
+                });
+            }
+        });
+
         function viewConversation(conversationId) {
+            currentConversationId = conversationId;
             const modal = new bootstrap.Modal(document.getElementById('conversationModal'));
             const modalBody = document.getElementById('conversationModalBody');
+            const modalFooter = document.getElementById('conversationModalFooter');
             
             // Show loading
             modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+            modalFooter.style.display = 'none';
             modal.show();
+            
+            // Join conversation room
+            if (adminSocket && adminSocket.connected && currentAdminId) {
+                adminSocket.emit('join', {
+                    userId: currentAdminId,
+                    conversationId: conversationId
+                });
+            }
             
             // Fetch conversation details
             fetch(`/admin/chats/${conversationId}`)
@@ -297,50 +395,188 @@
                     const conversation = data.conversation;
                     const messages = data.messages;
                     
-                    // Find user participant
-                    const userParticipant = conversation.participants.find(p => 
-                        !p.userEmail.includes('admin') && !p.userEmail.includes('@herewego.com')
-                    ) || conversation.participants[0];
+                    // Find user participant (not admin)
+                    const userParticipant = conversation.participants.find(p => {
+                        const pId = p.userId ? p.userId.toString() : p.userId;
+                        return pId !== currentAdminId;
+                    }) || conversation.participants[0];
                     
                     let html = `
-                        <div class="mb-3">
-                            <h6>Thông tin Hội thoại</h6>
+                        <div class="mb-3 p-3 bg-light rounded">
+                            <h6 class="mb-2">Thông tin Hội thoại</h6>
                             <p class="mb-1"><strong>Người dùng:</strong> ${userParticipant ? userParticipant.userName : 'Unknown'}</p>
                             <p class="mb-1"><strong>Email:</strong> ${userParticipant ? userParticipant.userEmail : 'N/A'}</p>
-                            <p class="mb-1"><strong>Trạng thái:</strong> ${conversation.isActive ? '<span class="badge bg-success">Đang hoạt động</span>' : '<span class="badge bg-secondary">Đã đóng</span>'}</p>
-                            <p class="mb-0"><strong>Tổng tin nhắn:</strong> ${messages.length}</p>
+                            <p class="mb-0"><strong>Trạng thái:</strong> ${conversation.isActive ? '<span class="badge bg-success">Đang hoạt động</span>' : '<span class="badge bg-secondary">Đã đóng</span>'}</p>
                         </div>
                         <hr>
-                        <h6>Tin nhắn</h6>
-                        <div style="max-height: 400px; overflow-y: auto;">
+                        <h6 class="mb-3">Tin nhắn</h6>
+                        <div id="adminMessagesContainer">
                     `;
                     
                     if (messages.length > 0) {
                         messages.forEach(msg => {
-                            // Check if sender is admin by checking if senderName contains "Admin" or "Support"
-                            const isAdmin = msg.senderName && (msg.senderName.toLowerCase().includes('admin') || msg.senderName.toLowerCase().includes('support'));
-                            html += `
-                                <div class="mb-3 p-2 ${isAdmin ? 'bg-light' : ''}" style="border-left: 3px solid ${isAdmin ? '#007bff' : '#28a745'};">
-                                    <div class="d-flex justify-content-between">
-                                        <strong>${msg.senderName || 'Unknown'}</strong>
-                                        <small class="text-muted">${new Date(msg.createdAt).toLocaleString('vi-VN')}</small>
-                                    </div>
-                                    <p class="mb-0 mt-1">${msg.content}</p>
-                                    ${msg.isRead ? '<small class="text-muted"><i class="fa fa-check me-1"></i>Đã đọc</small>' : '<small class="text-warning"><i class="fa fa-envelope me-1"></i>Chưa đọc</small>'}
-                                </div>
-                            `;
+                            // Compare senderId with currentAdminId (handle both ObjectId and string)
+                            const msgSenderId = msg.senderId ? msg.senderId.toString() : String(msg.senderId || '');
+                            const adminIdStr = String(currentAdminId || '');
+                            const isAdminMsg = msgSenderId === adminIdStr;
+                            html += renderMessage(msg, isAdminMsg);
                         });
                     } else {
-                        html += '<p class="text-muted text-center">Chưa có tin nhắn nào</p>';
+                        html += '<p class="text-muted text-center py-4">Chưa có tin nhắn nào</p>';
                     }
                     
                     html += '</div>';
                     modalBody.innerHTML = html;
+                    
+                    // Show reply form
+                    modalFooter.style.display = 'block';
+                    
+                    // Scroll to bottom
+                    const container = document.getElementById('adminMessagesContainer');
+                    if (container) {
+                        container.scrollTop = container.scrollHeight;
+                    }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     modalBody.innerHTML = '<div class="alert alert-danger">Có lỗi xảy ra khi tải hội thoại</div>';
                 });
+        }
+
+        function renderMessage(msg, isAdminMsg) {
+            const messageTime = new Date(msg.createdAt).toLocaleString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit'
+            });
+            
+            return `
+                <div class="admin-message-wrapper ${isAdminMsg ? 'admin-message' : 'user-message'}" data-message-id="${msg._id}">
+                    <div class="admin-message-bubble">
+                        <div>${msg.content}</div>
+                        <div class="admin-message-time">${messageTime}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addMessageToModal(messageData, isAdminMsg) {
+            const container = document.getElementById('adminMessagesContainer');
+            if (!container) return;
+
+            // If this is a real message (not temp), check if it already exists
+            if (messageData._id && !messageData._id.startsWith('temp_')) {
+                const existing = container.querySelector(`[data-message-id="${messageData._id}"]`);
+                if (existing) {
+                    // Remove any temp messages with same content
+                    const tempMsgs = container.querySelectorAll(`[data-message-id^="temp_"]`);
+                    tempMsgs.forEach(temp => {
+                        const tempContent = temp.querySelector('.admin-message-bubble div').textContent.trim();
+                        if (tempContent === messageData.content) {
+                            temp.remove();
+                        }
+                    });
+                    return;
+                }
+                
+                // Remove temp message if real message arrives
+                const tempMsgs = container.querySelectorAll(`[data-message-id^="temp_"]`);
+                tempMsgs.forEach(temp => {
+                    const tempContent = temp.querySelector('.admin-message-bubble div').textContent.trim();
+                    if (tempContent === messageData.content) {
+                        temp.remove();
+                    }
+                });
+            }
+
+            const messageHtml = renderMessage(messageData, isAdminMsg);
+            container.insertAdjacentHTML('beforeend', messageHtml);
+            
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Send reply
+        document.addEventListener('DOMContentLoaded', function() {
+            const sendBtn = document.getElementById('adminSendBtn');
+            const replyInput = document.getElementById('adminReplyInput');
+
+            if (sendBtn && replyInput) {
+                sendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    sendAdminReply();
+                });
+                
+                replyInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        sendAdminReply();
+                    }
+                });
+            }
+        });
+
+        function sendAdminReply() {
+            const replyInput = document.getElementById('adminReplyInput');
+            const message = replyInput.value.trim();
+
+            if (!message || !currentConversationId) {
+                return;
+            }
+
+            // Send via Socket.IO if connected
+            if (adminSocket && adminSocket.connected) {
+                // Optimistically add message to UI immediately (admin's own message)
+                const tempMessage = {
+                    _id: 'temp_' + Date.now(),
+                    conversationId: currentConversationId,
+                    senderId: currentAdminId,
+                    senderName: 'You',
+                    content: message,
+                    createdAt: new Date(),
+                    isRead: true
+                };
+                addMessageToModal(tempMessage, true);
+                replyInput.value = '';
+                
+                // Send via socket
+                adminSocket.emit('send_message', {
+                    conversationId: currentConversationId,
+                    content: message,
+                    senderId: currentAdminId
+                });
+                return;
+            }
+
+            // Fallback to REST API
+            fetch(`/admin/chats/${currentConversationId}/reply`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Ensure message is marked as admin message
+                    const msgSenderId = data.message.senderId ? data.message.senderId.toString() : '';
+                    const isAdminMsg = msgSenderId === currentAdminId;
+                    addMessageToModal(data.message, isAdminMsg);
+                    replyInput.value = '';
+                } else {
+                    alert('Có lỗi xảy ra: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi gửi tin nhắn');
+            });
         }
     </script>
 </body>
