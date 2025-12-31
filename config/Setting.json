@@ -5,7 +5,7 @@
     "database": "account"
   },
   "jwt": {
-    "secret": "goK!pusp6ThEdURUtRenOwUhAsWUCLheBazl!uJLPlS8EbreWLdrupIwabRAsiBu",
+    "secret": "default-secret-key-change-in-production",
     "expiresIn": "24h"
   }
 }

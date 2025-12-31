@@ -1,5 +1,5 @@
 var jsonwebtoken = require('jsonwebtoken');
-var config = require(global.__basedir + '/Config/Setting.json');
+const config = require(global.__basedir + '/config/config');
 
 function verifyToken(req, res, next) {
     if(req.headers['authorization'] == null){
