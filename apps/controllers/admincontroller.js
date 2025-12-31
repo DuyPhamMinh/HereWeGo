@@ -168,6 +168,69 @@ router.get("/chats/:conversationId", async function (req, res) {
   }
 });
 
+// POST /admin/chats/:conversationId/reply - Admin trả lời tin nhắn
+router.post("/chats/:conversationId/reply", async function (req, res) {
+  try {
+    const { Conversation, Message } = require(__dirname + "/../model/Chat");
+    const conversationId = req.params.conversationId;
+    const { content } = req.body;
+    const adminId = req.session.user.id;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Nội dung tin nhắn không được để trống" });
+    }
+
+    // Get admin user
+    const adminUser = await User.findById(adminId);
+    if (!adminUser || adminUser.role !== "admin") {
+      return res.status(403).json({ error: "Chỉ admin mới có thể trả lời tin nhắn" });
+    }
+
+    // Get conversation
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ error: "Hội thoại không tồn tại" });
+    }
+
+    // Check if admin is participant
+    const isAdminParticipant = conversation.participants.some(
+      (p) => p.userId.toString() === adminId.toString()
+    );
+    if (!isAdminParticipant) {
+      return res.status(403).json({ error: "Bạn không phải là thành viên của hội thoại này" });
+    }
+
+    // Create message
+    const message = new Message({
+      conversationId: conversationId,
+      senderId: adminId,
+      senderName: adminUser.firstName + " " + adminUser.lastName,
+      content: content.trim(),
+      isRead: false,
+    });
+
+    await message.save();
+
+    // Update conversation
+    conversation.lastMessage = content.trim();
+    conversation.lastMessageAt = new Date();
+    // Don't increase unread count for admin's own messages
+    await conversation.save();
+
+    // Mark admin's own message as read
+    message.isRead = true;
+    await message.save();
+
+    res.json({
+      success: true,
+      message: message,
+    });
+  } catch (error) {
+    console.error("Error sending admin reply:", error);
+    res.status(500).json({ error: "Có lỗi xảy ra khi gửi tin nhắn" });
+  }
+});
+
 // Bookings Management
 router.get("/bookings", async function (req, res) {
   try {

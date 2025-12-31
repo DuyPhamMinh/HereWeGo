@@ -67,3 +67,17 @@ app.use(controller);
 var server = app.listen(process.env.PORT || 8080, function () {
   console.log(`Server is running on port ${process.env.PORT || 8080}`);
 });
+
+// Initialize Socket.IO
+const { Server } = require("socket.io");
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Socket.IO connection handling
+require(__dirname + "/apps/socket/chatSocket")(io);
+
+module.exports = { app, io };
