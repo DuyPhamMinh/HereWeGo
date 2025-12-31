@@ -17,62 +17,94 @@ router.get("/", requireAuth, async (req, res) => {
     const userId = req.session.user.id;
     
     // Lấy danh sách hội thoại của user
-    const conversations = await Conversation.find({
+    let conversations = await Conversation.find({
       "participants.userId": userId,
       isActive: true,
     })
       .sort({ lastMessageAt: -1 })
       .limit(20);
 
-    // Mock data nếu chưa có hội thoại nào
-    let mockConversations = [];
+    // Nếu chưa có hội thoại nào, tự động tạo hội thoại với admin và tin nhắn chào
     if (conversations.length === 0) {
-      mockConversations = [
-        {
-          _id: "mock_conv_1",
+      const user = await User.findById(userId);
+      const adminUser = await User.findOne({ role: "admin" });
+
+      if (user && adminUser) {
+        // Tạo hội thoại mới
+        const conversation = new Conversation({
           participants: [
             {
               userId: userId,
-              userName: req.session.user.firstName + " " + req.session.user.lastName,
-              userEmail: req.session.user.email,
+              userName: user.firstName + " " + user.lastName,
+              userEmail: user.email,
             },
             {
-              userId: "mock_admin_1",
-              userName: "Admin Support",
-              userEmail: "admin@herewego.com",
+              userId: adminUser._id,
+              userName: adminUser.firstName + " " + adminUser.lastName,
+              userEmail: adminUser.email,
             },
           ],
-          lastMessage: "Xin chào! Tôi có thể giúp gì cho bạn?",
+          lastMessage: "Xin chào! Chúng tôi có thể giúp gì cho bạn?",
           lastMessageAt: new Date(),
-          unreadCount: 0,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          _id: "mock_conv_2",
-          participants: [
-            {
-              userId: userId,
-              userName: req.session.user.firstName + " " + req.session.user.lastName,
-              userEmail: req.session.user.email,
-            },
-            {
-              userId: "mock_admin_2",
-              userName: "Tour Guide",
-              userEmail: "guide@herewego.com",
-            },
-          ],
-          lastMessage: "Bạn có muốn đặt tour không?",
-          lastMessageAt: new Date(Date.now() - 3600000),
           unreadCount: 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
+        });
+
+        await conversation.save();
+
+        // Tạo tin nhắn chào từ admin
+        const welcomeMessage = new Message({
+          conversationId: conversation._id,
+          senderId: adminUser._id,
+          senderName: adminUser.firstName + " " + adminUser.lastName,
+          content: "Xin chào! Chúng tôi có thể giúp gì cho bạn?",
+          isRead: false,
+        });
+
+        await welcomeMessage.save();
+
+        // Lấy lại danh sách hội thoại
+        conversations = await Conversation.find({
+          "participants.userId": userId,
+          isActive: true,
+        })
+          .sort({ lastMessageAt: -1 })
+          .limit(20);
+
+        // Nếu vừa tạo hội thoại mới, tự động mở hội thoại đó
+        if (conversations.length > 0) {
+          const messages = await Message.find({ conversationId: conversation._id })
+            .sort({ createdAt: 1 })
+            .limit(100);
+
+          return res.render("chat.ejs", {
+            conversations: conversations,
+            currentUser: req.session.user,
+            activeConversationId: conversation._id,
+            activeConversation: conversation,
+            messages: messages,
+          });
+        }
+      }
+    }
+
+    // Nếu chỉ có 1 hội thoại, tự động mở
+    if (conversations.length === 1) {
+      const conversation = conversations[0];
+      const messages = await Message.find({ conversationId: conversation._id })
+        .sort({ createdAt: 1 })
+        .limit(100);
+
+      return res.render("chat.ejs", {
+        conversations: conversations,
+        currentUser: req.session.user,
+        activeConversationId: conversation._id,
+        activeConversation: conversation,
+        messages: messages,
+      });
     }
 
     res.render("chat.ejs", {
-      conversations: conversations.length > 0 ? conversations : mockConversations,
+      conversations: conversations,
       currentUser: req.session.user,
       activeConversationId: null,
       messages: [],
@@ -103,94 +135,7 @@ router.get("/:conversationId", requireAuth, async (req, res) => {
       .sort({ lastMessageAt: -1 })
       .limit(20);
 
-    // Mock conversations nếu chưa có
-    let mockConversations = [];
-    if (conversations.length === 0) {
-      mockConversations = [
-        {
-          _id: "mock_conv_1",
-          participants: [
-            {
-              userId: userId,
-              userName: req.session.user.firstName + " " + req.session.user.lastName,
-              userEmail: req.session.user.email,
-            },
-            {
-              userId: "mock_admin_1",
-              userName: "Admin Support",
-              userEmail: "admin@herewego.com",
-            },
-          ],
-          lastMessage: "Xin chào! Tôi có thể giúp gì cho bạn?",
-          lastMessageAt: new Date(),
-          unreadCount: 0,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
-    }
-
-    // Kiểm tra nếu là mock conversation
-    if (conversationId.startsWith("mock_")) {
-      const mockMessages = [
-        {
-          _id: "mock_msg_1",
-          conversationId: conversationId,
-          senderId: conversationId === "mock_conv_1" ? "mock_admin_1" : "mock_admin_2",
-          senderName: conversationId === "mock_conv_1" ? "Admin Support" : "Tour Guide",
-          content: conversationId === "mock_conv_1" 
-            ? "Xin chào! Tôi có thể giúp gì cho bạn?" 
-            : "Bạn có muốn đặt tour không?",
-          isRead: true,
-          createdAt: new Date(Date.now() - 7200000),
-          updatedAt: new Date(Date.now() - 7200000),
-        },
-        {
-          _id: "mock_msg_2",
-          conversationId: conversationId,
-          senderId: userId,
-          senderName: req.session.user.firstName + " " + req.session.user.lastName,
-          content: "Tôi muốn hỏi về tour du lịch Đà Lạt",
-          isRead: true,
-          createdAt: new Date(Date.now() - 3600000),
-          updatedAt: new Date(Date.now() - 3600000),
-        },
-        {
-          _id: "mock_msg_3",
-          conversationId: conversationId,
-          senderId: conversationId === "mock_conv_1" ? "mock_admin_1" : "mock_admin_2",
-          senderName: conversationId === "mock_conv_1" ? "Admin Support" : "Tour Guide",
-          content: "Chúng tôi có nhiều tour Đà Lạt rất hấp dẫn. Bạn muốn tour mấy ngày?",
-          isRead: true,
-          createdAt: new Date(Date.now() - 1800000),
-          updatedAt: new Date(Date.now() - 1800000),
-        },
-        {
-          _id: "mock_msg_4",
-          conversationId: conversationId,
-          senderId: userId,
-          senderName: req.session.user.firstName + " " + req.session.user.lastName,
-          content: "Tôi muốn tour 3 ngày 2 đêm",
-          isRead: true,
-          createdAt: new Date(Date.now() - 900000),
-          updatedAt: new Date(Date.now() - 900000),
-        },
-      ];
-
-      const activeConversation = mockConversations.find(
-        (c) => c._id === conversationId
-      ) || mockConversations[0];
-
-      return res.render("chat.ejs", {
-        conversations: mockConversations,
-        currentUser: req.session.user,
-        activeConversationId: conversationId,
-        activeConversation: activeConversation,
-        messages: mockMessages,
-      });
-    }
-
-    // Lấy hội thoại thực
+    // Lấy hội thoại
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
       return res.redirect("/chat");
@@ -210,7 +155,7 @@ router.get("/:conversationId", requireAuth, async (req, res) => {
       .limit(100);
 
     res.render("chat.ejs", {
-      conversations: conversations.length > 0 ? conversations : mockConversations,
+      conversations: conversations,
       currentUser: req.session.user,
       activeConversationId: conversationId,
       activeConversation: conversation,
@@ -222,47 +167,66 @@ router.get("/:conversationId", requireAuth, async (req, res) => {
   }
 });
 
-// POST /chat/create - Tạo hội thoại mới
+// POST /chat/create - Tạo hội thoại mới (DISABLED - Chỉ chat với admin mặc định)
 router.post("/create", requireAuth, async (req, res) => {
+  // Không cho phép tạo hội thoại mới, chỉ sử dụng hội thoại với admin mặc định
+  return res.status(403).json({ 
+    error: "Không thể tạo hội thoại mới. Chỉ có thể chat với admin mặc định." 
+  });
+});
+
+// POST /chat/send - Gửi tin nhắn (REST API fallback)
+router.post("/send", requireAuth, async (req, res) => {
   try {
     const userId = req.session.user.id;
-    const user = await User.findById(userId);
+    const { conversationId, content } = req.body;
 
+    if (!conversationId || !content) {
+      return res.status(400).json({ error: "conversationId and content are required" });
+    }
+
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Tạo hội thoại với admin (mock)
-    const adminUser = {
-      userId: "admin_support",
-      userName: "Admin Support",
-      userEmail: "admin@herewego.com",
-    };
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
 
-    const conversation = new Conversation({
-      participants: [
-        {
-          userId: userId,
-          userName: user.firstName + " " + user.lastName,
-          userEmail: user.email,
-        },
-        adminUser,
-      ],
-      lastMessage: "",
-      lastMessageAt: new Date(),
-      unreadCount: 0,
+    // Check if user is participant
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId.toString() === userId.toString()
+    );
+    if (!isParticipant) {
+      return res.status(403).json({ error: "You are not a participant" });
+    }
+
+    // Create message
+    const message = new Message({
+      conversationId: conversationId,
+      senderId: userId,
+      senderName: user.firstName + " " + user.lastName,
+      content: content,
+      isRead: false,
     });
 
+    await message.save();
+
+    // Update conversation
+    conversation.lastMessage = content;
+    conversation.lastMessageAt = new Date();
+    conversation.unreadCount = (conversation.unreadCount || 0) + 1;
     await conversation.save();
 
     res.json({
       success: true,
-      conversationId: conversation._id,
-      message: "Hội thoại đã được tạo thành công",
+      message: message,
     });
   } catch (error) {
-    console.error("Error creating conversation:", error);
-    res.status(500).json({ error: "Có lỗi xảy ra khi tạo hội thoại" });
+    console.error("Error sending message:", error);
+    res.status(500).json({ error: "Có lỗi xảy ra khi gửi tin nhắn" });
   }
 });
 
