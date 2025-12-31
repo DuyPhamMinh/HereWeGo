@@ -1,8 +1,8 @@
 var express = require("express");
 var router = express.Router();
 const jsonwebtoken = require("jsonwebtoken");
-var config = require(global.__basedir + '/Config/Setting.json');
 var User = require(global.__basedir + "/apps/model/User");
+const config = require(global.__basedir + "/config/config");
 
 // Login API
 router.post("/login", async (req, res) => {

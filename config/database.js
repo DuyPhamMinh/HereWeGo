@@ -1,13 +1,19 @@
 const mongoose = require("mongoose");
+const config = require("./config");
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(
-      "mongodb+srv://phamminhduy:gZG3oD3kcFCY15TB@cluster0.gv6gahz.mongodb.net/account?retryWrites=true&w=majority&appName=Cluster0"
-    );
+    const mongoUri = config.mongodb.uri;
+    
+    if (!mongoUri) {
+      throw new Error("MONGODB_URI is not defined in environment variables or config");
+    }
+    
+    const conn = await mongoose.connect(mongoUri);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error("Error connecting to MongoDB:", error.message);
+    console.error("Please check your MONGODB_URI in .env file");
     process.exit(1);
   }
 };

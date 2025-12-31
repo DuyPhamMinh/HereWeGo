@@ -1,3 +1,6 @@
+// Load environment variables
+require("dotenv").config();
+
 var express = require("express");
 var bodyParser = require("body-parser");
 var session = require("express-session");
@@ -22,15 +25,17 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// Load config
+const config = require(__dirname + "/config/config");
+
 // Session configuration
 app.use(
   session({
-    secret: "your-secret-key-change-this-in-production",
+    secret: config.session.secret,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-      mongoUrl:
-        "mongodb+srv://phamminhduy:gZG3oD3kcFCY15TB@cluster0.gv6gahz.mongodb.net/account?retryWrites=true&w=majority&appName=Cluster0",
+      mongoUrl: config.mongodb.uri,
     }),
     cookie: {
       maxAge: 1000 * 60 * 60 * 24, // 24 hours
@@ -59,6 +64,6 @@ app.use("/api", apiRoutes);
 // View Routes (Traditional EJS views)
 app.use(controller);
 
-var server = app.listen(8080, function () {
-  console.log("Server is running on port 8080");
+var server = app.listen(process.env.PORT || 8080, function () {
+  console.log(`Server is running on port ${process.env.PORT || 8080}`);
 });
