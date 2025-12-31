@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('partical/head'); %>
+    <title>Chat - HereWeGo</title>
+    <link href="/static/css/chat.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <!-- Spinner Start -->
+    <div
+      id="spinner"
+      class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center"
+    >
+      <div
+        class="spinner-border text-primary"
+        style="width: 3rem; height: 3rem"
+        role="status"
+      >
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+    <!-- Spinner End -->
+
+    <% var activePage = 'chat'; %> <%- include('partical/menu'); %>
+
+    <!-- Header Start -->
+    <div class="container-fluid bg-breadcrumb">
+      <div class="container text-center py-5" style="max-width: 900px">
+        <h3 class="text-white display-3 mb-4">Chat Support</h3>
+        <ol class="breadcrumb justify-content-center mb-0">
+          <li class="breadcrumb-item"><a href="/">Home</a></li>
+          <li class="breadcrumb-item active text-white">Chat</li>
+        </ol>
+      </div>
+    </div>
+    <!-- Header End -->
+
+    <!-- Chat Section Start -->
+    <div class="container-fluid py-5">
+      <div class="container">
+        <div class="row">
+          <!-- Chat Container -->
+          <div class="col-12">
+            <div class="chat-container">
+              <!-- Sidebar - Danh sách hội thoại -->
+              <div class="chat-sidebar">
+                <div class="chat-sidebar-header">
+                  <h5 class="mb-0">
+                    <i class="fas fa-comments me-2"></i>Hội thoại
+                  </h5>
+                  <button
+                    class="btn btn-primary btn-sm"
+                    id="createConversationBtn"
+                    title="Tạo hội thoại mới"
+                  >
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+                <div class="chat-sidebar-body">
+                  <% if (typeof conversations !== 'undefined' && conversations.length > 0) { %>
+                    <% conversations.forEach(function(conversation) { %>
+                      <% 
+                        const otherParticipant = conversation.participants.find(
+                          p => p.userId.toString() !== currentUser.id.toString()
+                        );
+                        const isActive = conversation._id.toString() === (typeof activeConversationId !== 'undefined' && activeConversationId ? activeConversationId.toString() : '');
+                      %>
+                      <div
+                        class="conversation-item <%= isActive ? 'active' : '' %>"
+                        data-conversation-id="<%= conversation._id %>"
+                      >
+                        <div class="conversation-avatar">
+                          <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="conversation-info">
+                          <div class="conversation-name">
+                            <%= otherParticipant ? otherParticipant.userName : 'Unknown' %>
+                          </div>
+                          <div class="conversation-preview">
+                            <%= conversation.lastMessage || 'Chưa có tin nhắn' %>
+                          </div>
+                          <div class="conversation-meta">
+                            <span class="conversation-time">
+                              <%= new Date(conversation.lastMessageAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %>
+                            </span>
+                            <% if (conversation.unreadCount > 0) { %>
+                              <span class="conversation-unread"><%= conversation.unreadCount %></span>
+                            <% } %>
+                          </div>
+                        </div>
+                      </div>
+                    <% }); %>
+                  <% } else { %>
+                    <div class="no-conversations">
+                      <i class="fas fa-comment-slash fa-3x mb-3 text-muted"></i>
+                      <p class="text-muted">Chưa có hội thoại nào</p>
+                      <button class="btn btn-primary btn-sm" id="createFirstConversationBtn">
+                        <i class="fas fa-plus me-2"></i>Tạo hội thoại đầu tiên
+                      </button>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+
+              <!-- Main Chat Area -->
+              <div class="chat-main">
+                <% if (typeof activeConversationId !== 'undefined' && activeConversationId) { %>
+                  <!-- Chat Header -->
+                  <div class="chat-header">
+                    <% 
+                      const activeConv = typeof activeConversation !== 'undefined' && activeConversation 
+                        ? activeConversation 
+                        : conversations.find(c => c._id.toString() === activeConversationId.toString());
+                      const otherUser = activeConv && activeConv.participants 
+                        ? activeConv.participants.find(p => p.userId.toString() !== currentUser.id.toString())
+                        : null;
+                    %>
+                    <div class="chat-header-info">
+                      <div class="chat-header-avatar">
+                        <i class="fas fa-user-circle"></i>
+                      </div>
+                      <div class="chat-header-details">
+                        <h6 class="mb-0">
+                          <%= otherUser ? otherUser.userName : 'Unknown User' %>
+                        </h6>
+                        <small class="text-muted">Đang hoạt động</small>
+                      </div>
+                    </div>
+                    <div class="chat-header-actions">
+                      <button class="btn btn-sm btn-link" title="Thông tin">
+                        <i class="fas fa-info-circle"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Messages Area -->
+                  <div class="chat-messages" id="chatMessages">
+                    <% if (typeof messages !== 'undefined' && messages.length > 0) { %>
+                      <% messages.forEach(function(message) { %>
+                        <% 
+                          const isOwnMessage = message.senderId.toString() === currentUser.id.toString();
+                          const messageTime = new Date(message.createdAt || message.updatedAt);
+                        %>
+                        <div class="message-wrapper <%= isOwnMessage ? 'own-message' : 'other-message' %>">
+                          <div class="message-bubble">
+                            <div class="message-content">
+                              <%= message.content %>
+                            </div>
+                            <div class="message-time">
+                              <%= messageTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %>
+                            </div>
+                          </div>
+                        </div>
+                      <% }); %>
+                    <% } else { %>
+                      <div class="no-messages">
+                        <i class="fas fa-comments fa-3x mb-3 text-muted"></i>
+                        <p class="text-muted">Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!</p>
+                      </div>
+                    <% } %>
+                  </div>
+
+                  <!-- Message Input -->
+                  <div class="chat-input">
+                    <div class="input-group">
+                      <button class="btn btn-outline-secondary" type="button" title="Đính kèm">
+                        <i class="fas fa-paperclip"></i>
+                      </button>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="messageInput"
+                        placeholder="Nhập tin nhắn..."
+                        autocomplete="off"
+                      />
+                      <button
+                        class="btn btn-primary"
+                        type="button"
+                        id="sendMessageBtn"
+                        title="Gửi"
+                      >
+                        <i class="fas fa-paper-plane"></i>
+                      </button>
+                    </div>
+                  </div>
+                <% } else { %>
+                  <!-- Empty State -->
+                  <div class="chat-empty">
+                    <i class="fas fa-comments fa-4x mb-4 text-primary"></i>
+                    <h4>Chọn một hội thoại để bắt đầu</h4>
+                    <p class="text-muted">
+                      Hoặc tạo hội thoại mới để liên hệ với chúng tôi
+                    </p>
+                    <button class="btn btn-primary mt-3" id="createConversationEmptyBtn">
+                      <i class="fas fa-plus me-2"></i>Tạo hội thoại mới
+                    </button>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Chat Section End -->
+
+    <%- include('partical/footer'); %>
+
+    <!-- Chat JavaScript - Load after Bootstrap -->
+    <script src="/static/js/chat.js"></script>
+  </body>
+</html>
+

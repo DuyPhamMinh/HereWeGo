@@ -3,10 +3,10 @@ const querystring = require("querystring");
 
 // VNPay Sandbox Configuration
 const vnpayConfig = {
-  tmnCode: "WTTGO1NX", // Thay bằng TMN Code của bạn từ VNPay
-  secretKey: "EZFJFTMHCNO89N1A7P4BR7WW7IOU64U9", // Thay bằng Secret Key của bạn từ VNPay
-  vnpUrl: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
-  vnpReturnUrl: "http://localhost:8080/booking/vnpay-return", // URL callback sau khi thanh toán
+  tmnCode: process.env.VNPAY_TMN_CODE,
+  secretKey: process.env.VNPAY_HASH_SECRET,
+  vnpUrl: process.env.VNPAY_URL || "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
+  vnpReturnUrl: process.env.VNPAY_RETURN_URL || "http://localhost:8080/booking/vnpay-return",
   vnpApi: "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction",
   vnpVersion: "2.1.0",
   vnpCommand: "pay",

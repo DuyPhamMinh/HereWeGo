@@ -42,5 +42,6 @@ router.use("/register", require(__dirname + "/registercontroller"));
 router.use("/admin", require(__dirname + "/admincontroller"));
 router.use("/logout", require(__dirname + "/logoutcontroller"));
 router.use("/profile", require(__dirname + "/profilecontroller"));
+router.use("/chat", require(__dirname + "/chatcontroller"));
 
 module.exports = router;
