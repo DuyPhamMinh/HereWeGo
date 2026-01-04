@@ -137,7 +137,7 @@
                         booking._id.toString().substring(18, 24) %>
                       </small>
                     </p>
-                    <div class="mt-3 d-flex gap-2">
+                    <div class="mt-3 d-flex gap-2 flex-wrap">
                       <% if (booking.paymentStatus === 'pending') { %>
                       <button
                         type="button"
@@ -156,7 +156,56 @@
                         <i class="fa fa-file-invoice me-2"></i>Xem hóa đơn
                       </a>
                       <% } %>
+                      <% if ((booking.status === 'completed' || booking.paymentStatus === 'paid') && !booking.review) { %>
+                      <button
+                        type="button"
+                        class="btn btn-warning btn-sm flex-fill review-btn"
+                        data-booking-id="<%= booking._id %>"
+                        data-tour-id="<%= booking.tour && booking.tour._id ? booking.tour._id : '' %>"
+                        data-tour-title="<%= booking.tour && booking.tour.title ? booking.tour.title : 'Tour' %>"
+                      >
+                        <i class="fa fa-star me-2"></i>Viết đánh giá
+                      </button>
+                      <% } %>                       <% if (booking.review) { %>
+                      <button
+                        type="button"
+                        class="btn btn-info btn-sm flex-fill review-btn"
+                        data-booking-id="<%= booking._id %>"
+                        data-tour-id="<%= booking.tour && booking.tour._id ? booking.tour._id : '' %>"
+                        data-tour-title="<%= booking.tour && booking.tour.title ? booking.tour.title : 'Tour' %>"
+                        data-review-rating="<%= booking.review.rating || 0 %>"
+                        data-review-title="<%= booking.review.title || '' %>"
+                        data-review-comment="<%= booking.review.comment || '' %>"
+                      >
+                        <i class="fa fa-edit me-2"></i>Xem/Sửa đánh giá
+                      </button>
+                      <% } %>
                     </div>
+                    <% if (booking.review) { %>
+                    <div class="mt-2">
+                      <div class="d-flex align-items-center mb-1">
+                        <strong class="me-2">Đánh giá của bạn:</strong>
+                        <div class="rating-display">
+                          <% for (let i = 1; i <= 5; i++) { %>
+                            <% if (i <= booking.review.rating) { %>
+                              <i class="fa fa-star text-warning"></i>
+                            <% } else { %>
+                              <i class="fa fa-star-o text-muted"></i>
+                            <% } %>
+                          <% } %>
+                        </div>
+                        <% if (booking.review.title) { %>
+                        <span class="ms-2 fw-bold"><%= booking.review.title %></span>
+                        <% } %>
+                      </div>
+                      <p class="text-muted mb-0 small"><%= booking.review.comment %></p>
+                      <% if (!booking.review.isApproved) { %>
+                      <small class="text-info">
+                        <i class="fa fa-clock me-1"></i>Đang chờ duyệt
+                      </small>
+                      <% } %>
+                    </div>
+                    <% } %>
                   </div>
                 </div>
               </div>
@@ -178,6 +227,101 @@
       </div>
     </div>
     <!-- Bookings End -->
+
+    <!-- Review Modal -->
+    <div
+      class="modal fade"
+      id="reviewModal"
+      tabindex="-1"
+      aria-labelledby="reviewModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="reviewModalLabel">Viết đánh giá</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="reviewForm">
+              <input type="hidden" id="reviewBookingId" />
+              <div class="mb-3">
+                <label class="form-label">Tour</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="reviewTourTitle"
+                  readonly
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Đánh giá sao <span class="text-danger">*</span></label>
+                <div class="rating-input">
+                  <input type="hidden" id="reviewRating" name="rating" required />
+                  <div class="stars" id="starContainer">
+                    <i class="far fa-star star-icon" data-rating="1"></i>
+                    <i class="far fa-star star-icon" data-rating="2"></i>
+                    <i class="far fa-star star-icon" data-rating="3"></i>
+                    <i class="far fa-star star-icon" data-rating="4"></i>
+                    <i class="far fa-star star-icon" data-rating="5"></i>
+                  </div>
+                  <small class="text-muted d-block mt-1">Click vào sao để chọn điểm</small>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="reviewTitle" class="form-label">Tiêu đề (tùy chọn)</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="reviewTitle"
+                  name="title"
+                  placeholder="Nhập tiêu đề đánh giá"
+                  maxlength="200"
+                />
+              </div>
+              <div class="mb-3">
+                <label for="reviewComment" class="form-label">
+                  Nội dung đánh giá <span class="text-danger">*</span>
+                </label>
+                <textarea
+                  class="form-control"
+                  id="reviewComment"
+                  name="comment"
+                  rows="5"
+                  placeholder="Chia sẻ trải nghiệm của bạn về tour này..."
+                  required
+                  maxlength="2000"
+                ></textarea>
+                <small class="text-muted">
+                  <span id="charCount">0</span>/2000 ký tự
+                </small>
+              </div>
+              <div class="alert alert-info">
+                <i class="fa fa-info-circle me-2"></i>
+                <small>Đánh giá của bạn sẽ được xem xét trước khi hiển thị công khai.</small>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+            <button type="button" class="btn btn-primary" id="submitReviewBtn">
+              <i class="fa fa-paper-plane me-2"></i>Gửi đánh giá
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <%- include('partical/footer'); %>
 
@@ -226,6 +370,252 @@
               '<i class="fa fa-credit-card me-2"></i>Thanh toán bằng VNPay';
           }
         });
+      });
+
+      // Review Modal Functions
+      let currentRating = 0;
+
+      // Handle review button clicks - use event delegation
+      document.addEventListener("click", function(e) {
+        if (e.target.closest(".review-btn")) {
+          e.preventDefault();
+          const btn = e.target.closest(".review-btn");
+          const bookingId = btn.getAttribute("data-booking-id");
+          let tourTitle = btn.getAttribute("data-tour-title") || "Tour";
+          
+          // Debug
+          console.log("Button clicked, tourTitle from attribute:", tourTitle);
+          
+          // Check if this button has review data
+          const reviewRating = btn.getAttribute("data-review-rating");
+          let existingReview = null;
+          if (reviewRating !== null) {
+            existingReview = {
+              rating: parseInt(reviewRating) || 0,
+              title: btn.getAttribute("data-review-title") || "",
+              comment: btn.getAttribute("data-review-comment") || ""
+            };
+          }
+          
+          // Show modal first, then populate data
+          const modalElement = document.getElementById("reviewModal");
+          if (modalElement && typeof bootstrap !== 'undefined') {
+            // Check if modal instance already exists
+            let modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (!modalInstance) {
+              modalInstance = new bootstrap.Modal(modalElement);
+            }
+            
+            // Wait for modal to be shown, then populate data
+            modalElement.addEventListener("shown.bs.modal", function populateModal() {
+              openReviewModal(bookingId, tourTitle, existingReview);
+              // Remove this listener after first use
+              modalElement.removeEventListener("shown.bs.modal", populateModal);
+            }, { once: true });
+            
+            modalInstance.show();
+          } else {
+            // Fallback if Bootstrap not available
+            openReviewModal(bookingId, tourTitle, existingReview);
+          }
+        }
+      });
+
+      function openReviewModal(bookingId, tourTitle, existingReview = null) {
+        // Reset form first
+        const form = document.getElementById("reviewForm");
+        if (form) form.reset();
+        
+        // Set booking ID and tour title AFTER reset
+        const bookingIdField = document.getElementById("reviewBookingId");
+        const tourTitleField = document.getElementById("reviewTourTitle");
+        
+        if (bookingIdField) bookingIdField.value = bookingId || "";
+        if (tourTitleField) {
+          tourTitleField.value = tourTitle || "Tour";
+          console.log("Setting tour title to:", tourTitle); // Debug
+        }
+        
+        currentRating = 0;
+        const charCount = document.getElementById("charCount");
+        if (charCount) charCount.textContent = "0";
+
+        // Load existing review if provided
+        if (existingReview) {
+          currentRating = existingReview.rating || 0;
+          const ratingField = document.getElementById("reviewRating");
+          const titleField = document.getElementById("reviewTitle");
+          const commentField = document.getElementById("reviewComment");
+          
+          if (ratingField) ratingField.value = currentRating;
+          if (titleField) titleField.value = existingReview.title || "";
+          if (commentField) {
+            commentField.value = existingReview.comment || "";
+            if (charCount) charCount.textContent = (existingReview.comment || "").length;
+          }
+        }
+        
+        // Initialize star rating after a short delay
+        setTimeout(() => {
+          initializeStarRating();
+          updateStars(currentRating);
+        }, 300);
+      }
+
+      function initializeStarRating() {
+        const starContainer = document.getElementById("starContainer");
+        if (!starContainer) {
+          console.log("Star container not found");
+          return;
+        }
+
+        // Get all stars
+        const stars = starContainer.querySelectorAll(".star-icon");
+        if (stars.length === 0) {
+          console.log("No stars found");
+          return;
+        }
+
+        // Use event delegation on the container instead of cloning
+        // This is more reliable and doesn't lose event listeners
+        starContainer.addEventListener("click", function(e) {
+          const star = e.target.closest(".star-icon");
+          if (star) {
+            e.preventDefault();
+            e.stopPropagation();
+            const rating = parseInt(star.getAttribute("data-rating"));
+            currentRating = rating;
+            const ratingField = document.getElementById("reviewRating");
+            if (ratingField) ratingField.value = rating;
+            updateStars(rating);
+            console.log("Star clicked, rating:", rating);
+          }
+        });
+
+        // Handle hover on individual stars
+        stars.forEach((star) => {
+          star.addEventListener("mouseenter", function() {
+            const rating = parseInt(this.getAttribute("data-rating"));
+            updateStars(rating);
+          });
+        });
+
+        // Handle mouse leave on rating container
+        const ratingInput = document.querySelector(".rating-input");
+        if (ratingInput) {
+          ratingInput.addEventListener("mouseleave", function() {
+            updateStars(currentRating);
+          });
+        }
+        
+        // Make sure stars are visible and clickable
+        stars.forEach((star) => {
+          star.style.cursor = "pointer";
+          star.style.pointerEvents = "auto";
+        });
+        
+        console.log("Star rating initialized with", stars.length, "stars"); // Debug
+      }
+
+      function updateStars(rating) {
+        const stars = document.querySelectorAll("#starContainer .star-icon");
+        if (stars.length === 0) {
+          console.log("No stars found for update");
+          return;
+        }
+        
+        stars.forEach((star) => {
+          const starRating = parseInt(star.getAttribute("data-rating"));
+          if (starRating <= rating) {
+            // Remove all star classes and add filled star
+            star.className = "fas fa-star star-icon";
+            star.style.color = "#ffc107";
+            star.style.cursor = "pointer";
+            star.style.pointerEvents = "auto";
+          } else {
+            // Remove all star classes and add outline star
+            star.className = "far fa-star star-icon";
+            star.style.color = "#6c757d";
+            star.style.cursor = "pointer";
+            star.style.pointerEvents = "auto";
+          }
+          // Ensure data-rating is preserved
+          star.setAttribute("data-rating", starRating);
+        });
+        console.log("Stars updated to rating:", rating, "- Active stars:", rating); // Debug
+      }
+
+      // Initialize star rating when modal is shown
+      const reviewModalElement = document.getElementById("reviewModal");
+      if (reviewModalElement) {
+        reviewModalElement.addEventListener("shown.bs.modal", function () {
+          initializeStarRating();
+          updateStars(currentRating);
+        });
+      }
+
+      // Character count
+      document.getElementById("reviewComment").addEventListener("input", function () {
+        const count = this.value.length;
+        document.getElementById("charCount").textContent = count;
+        if (count > 2000) {
+          this.value = this.value.substring(0, 2000);
+          document.getElementById("charCount").textContent = "2000";
+        }
+      });
+
+      // Submit review
+      document.getElementById("submitReviewBtn").addEventListener("click", async function () {
+        const bookingId = document.getElementById("reviewBookingId").value;
+        const rating = document.getElementById("reviewRating").value;
+        const title = document.getElementById("reviewTitle").value;
+        const comment = document.getElementById("reviewComment").value;
+
+        // Validation
+        if (!rating || rating < 1 || rating > 5) {
+          alert("Vui lòng chọn số sao đánh giá");
+          return;
+        }
+
+        if (!comment.trim()) {
+          alert("Vui lòng nhập nội dung đánh giá");
+          return;
+        }
+
+        const submitBtn = this;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Đang gửi...';
+
+        try {
+          const response = await fetch(`/booking/${bookingId}/review`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              rating: parseInt(rating),
+              title: title,
+              comment: comment,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            alert(data.message || "Đánh giá đã được gửi thành công!");
+            // Reload page to show updated review
+            window.location.reload();
+          } else {
+            alert("Có lỗi xảy ra: " + (data.error || "Không thể gửi đánh giá"));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa fa-paper-plane me-2"></i>Gửi đánh giá';
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.");
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fa fa-paper-plane me-2"></i>Gửi đánh giá';
+        }
       });
     </script>
   </body>

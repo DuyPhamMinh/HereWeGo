@@ -4,6 +4,7 @@ var { isAuthenticated } = require(__dirname + "/../middleware/auth");
 var Tour = require(__dirname + "/../model/Tour");
 var Booking = require(__dirname + "/../model/Booking");
 var User = require(__dirname + "/../model/User");
+var Review = require(__dirname + "/../model/Review");
 var vnpay = require(__dirname + "/../Util/vnpay");
 
 // Get booking page with optional tour ID
@@ -260,9 +261,23 @@ router.get("/my-bookings", isAuthenticated, async function (req, res) {
       )
       .sort({ createdAt: -1 });
 
+    // Get reviews for each booking
+    const bookingsWithReviews = await Promise.all(
+      bookings.map(async (booking) => {
+        const bookingObj = booking.toObject();
+        const review = await Review.findOne({
+          booking: booking._id,
+          user: userId,
+          isActive: true,
+        });
+        bookingObj.review = review;
+        return bookingObj;
+      })
+    );
+
     res.render("my-bookings.ejs", {
       activePage: "my-bookings",
-      bookings: bookings,
+      bookings: bookingsWithReviews,
       user: req.session.user,
     });
   } catch (error) {
@@ -273,6 +288,121 @@ router.get("/my-bookings", isAuthenticated, async function (req, res) {
       user: req.session.user,
       error: "Error loading bookings",
     });
+  }
+});
+
+// POST /booking/:id/review - Tạo đánh giá cho booking
+router.post("/:id/review", isAuthenticated, async function (req, res) {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.session.user.id;
+    const { rating, title, comment } = req.body;
+
+    // Validation
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: "Rating must be between 1 and 5" });
+    }
+
+    if (!comment || comment.trim().length === 0) {
+      return res.status(400).json({ error: "Comment is required" });
+    }
+
+    // Get booking
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    // Check if booking belongs to user
+    if (booking.user.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "You can only review your own bookings" });
+    }
+
+    // Check if booking is completed or paid (user can only review completed/paid bookings)
+    if (booking.status !== "completed" && booking.paymentStatus !== "paid") {
+      return res.status(400).json({ 
+        error: "You can only review completed or paid bookings" 
+      });
+    }
+
+    // Check if review already exists
+    const existingReview = await Review.findOne({
+      booking: bookingId,
+      user: userId,
+    });
+
+    if (existingReview) {
+      // Update existing review
+      existingReview.rating = rating;
+      existingReview.title = title ? title.trim() : "";
+      existingReview.comment = comment.trim();
+      existingReview.isApproved = false; // Reset approval status when updated
+      await existingReview.save();
+
+      return res.json({
+        success: true,
+        message: "Đánh giá đã được cập nhật",
+        review: existingReview,
+      });
+    }
+
+    // Create new review
+    const review = new Review({
+      booking: bookingId,
+      tour: booking.tour,
+      user: userId,
+      rating: parseInt(rating),
+      title: title ? title.trim() : "",
+      comment: comment.trim(),
+      isApproved: false,
+      isActive: true,
+    });
+
+    await review.save();
+
+    res.json({
+      success: true,
+      message: "Đánh giá đã được gửi thành công",
+      review: review,
+    });
+  } catch (error) {
+    console.error("Error creating review:", error);
+    if (error.code === 11000) {
+      // Duplicate key error
+      return res.status(400).json({ error: "Bạn đã đánh giá booking này rồi" });
+    }
+    res.status(500).json({ error: "Có lỗi xảy ra khi tạo đánh giá" });
+  }
+});
+
+// GET /booking/:id/review - Lấy đánh giá của booking
+router.get("/:id/review", isAuthenticated, async function (req, res) {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.session.user.id;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    // Check if booking belongs to user
+    if (booking.user.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const review = await Review.findOne({
+      booking: bookingId,
+      user: userId,
+    });
+
+    res.json({
+      success: true,
+      review: review || null,
+    });
+  } catch (error) {
+    console.error("Error fetching review:", error);
+    res.status(500).json({ error: "Có lỗi xảy ra khi tải đánh giá" });
   }
 });
 
