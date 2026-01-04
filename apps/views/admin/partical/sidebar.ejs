@@ -35,6 +35,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'reviews' ? ' active' : '' %>" href="/admin/reviews">
+                        <i class="fa fa-star me-2"></i> Reviews
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'tours' ? ' active' : '' %>" href="/admin/tours">
                         <i class="fa fa-map-marked-alt me-2"></i> Tours
                     </a>
