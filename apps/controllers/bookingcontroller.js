@@ -6,6 +6,7 @@ var Booking = require(__dirname + "/../model/Booking");
 var User = require(__dirname + "/../model/User");
 var Review = require(__dirname + "/../model/Review");
 var vnpay = require(__dirname + "/../Util/vnpay");
+var { sanitizeText } = require(__dirname + "/../util/profanityFilter");
 
 // Get booking page with optional tour ID
 router.get("/", async function (req, res) {
@@ -331,11 +332,25 @@ router.post("/:id/review", isAuthenticated, async function (req, res) {
       user: userId,
     });
 
+    // Filter profanity from title and comment
+    const titleText = title ? title.trim() : "";
+    const commentText = comment.trim();
+    
+    const sanitizedTitle = sanitizeText(titleText);
+    const sanitizedComment = sanitizeText(commentText);
+    
+    // Check if profanity was found
+    if (sanitizedTitle.hasProfanity || sanitizedComment.hasProfanity) {
+      return res.status(400).json({ 
+        error: "Đánh giá của bạn chứa từ ngữ không phù hợp. Vui lòng chỉnh sửa lại." 
+      });
+    }
+
     if (existingReview) {
       // Update existing review
       existingReview.rating = rating;
-      existingReview.title = title ? title.trim() : "";
-      existingReview.comment = comment.trim();
+      existingReview.title = sanitizedTitle.sanitized;
+      existingReview.comment = sanitizedComment.sanitized;
       existingReview.isApproved = false; // Reset approval status when updated
       await existingReview.save();
 
@@ -352,8 +367,8 @@ router.post("/:id/review", isAuthenticated, async function (req, res) {
       tour: booking.tour,
       user: userId,
       rating: parseInt(rating),
-      title: title ? title.trim() : "",
-      comment: comment.trim(),
+      title: sanitizedTitle.sanitized,
+      comment: sanitizedComment.sanitized,
       isApproved: false,
       isActive: true,
     });
