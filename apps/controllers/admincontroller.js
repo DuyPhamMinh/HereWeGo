@@ -3,6 +3,8 @@ var router = express.Router();
 var { isAuthenticated, isAdmin } = require(__dirname + "/../middleware/auth");
 var User = require(__dirname + "/../model/User");
 var Tour = require(__dirname + "/../model/Tour");
+var Review = require(__dirname + "/../model/Review");
+var Booking = require(__dirname + "/../model/Booking");
 
 // Apply authentication middleware to all admin routes
 router.use(isAuthenticated);
@@ -823,6 +825,141 @@ router.get("/tables", function (req, res) {
 // Settings
 router.get("/settings", function (req, res) {
   res.render("admin/settings.ejs", { activePage: 'settings' });
+});
+
+// Reviews Management
+router.get("/reviews", async function (req, res) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    // Filter options
+    const status = req.query.status; // 'pending', 'approved', 'rejected', 'all'
+    const search = req.query.search || "";
+    const rating = req.query.rating; // 1-5 or 'all'
+    
+    // Build query
+    let query = {};
+    
+    if (status && status !== 'all') {
+      if (status === 'pending') {
+        query.isApproved = false;
+        query.isActive = true;
+      } else if (status === 'approved') {
+        query.isApproved = true;
+        query.isActive = true;
+      } else if (status === 'rejected') {
+        query.isActive = false;
+      }
+    }
+    
+    if (rating && rating !== 'all') {
+      query.rating = parseInt(rating);
+    }
+    
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { comment: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Get reviews with pagination
+    const reviews = await Review.find(query)
+      .populate('user', 'firstName lastName email')
+      .populate('tour', 'title destination image')
+      .populate('booking', 'bookingDate numberOfPersons')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+    
+    // Get total count for pagination
+    const totalReviews = await Review.countDocuments(query);
+    const totalPages = Math.ceil(totalReviews / limit);
+    
+    // Get statistics
+    const stats = {
+      total: await Review.countDocuments(),
+      pending: await Review.countDocuments({ isApproved: false, isActive: true }),
+      approved: await Review.countDocuments({ isApproved: true, isActive: true }),
+      rejected: await Review.countDocuments({ isActive: false }),
+    };
+    
+    res.render("admin/reviews.ejs", {
+      activePage: 'reviews',
+      reviews: reviews,
+      currentPage: page,
+      totalPages: totalPages,
+      totalReviews: totalReviews,
+      stats: stats,
+      filters: {
+        status: status || 'all',
+        search: search,
+        rating: rating || 'all',
+      },
+    });
+  } catch (error) {
+    console.error("Error loading reviews:", error);
+    res.render("admin/reviews.ejs", {
+      activePage: 'reviews',
+      reviews: [],
+      error: "Error loading reviews",
+    });
+  }
+});
+
+// Approve review
+router.post("/reviews/:id/approve", async function (req, res) {
+  try {
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+    
+    review.isApproved = true;
+    review.isActive = true;
+    await review.save();
+    
+    res.json({ success: true, message: "Review approved successfully" });
+  } catch (error) {
+    console.error("Error approving review:", error);
+    res.status(500).json({ error: "Error approving review" });
+  }
+});
+
+// Reject review
+router.post("/reviews/:id/reject", async function (req, res) {
+  try {
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+    
+    review.isApproved = false;
+    review.isActive = false;
+    await review.save();
+    
+    res.json({ success: true, message: "Review rejected successfully" });
+  } catch (error) {
+    console.error("Error rejecting review:", error);
+    res.status(500).json({ error: "Error rejecting review" });
+  }
+});
+
+// Delete review
+router.delete("/reviews/:id", async function (req, res) {
+  try {
+    const review = await Review.findByIdAndDelete(req.params.id);
+    if (!review) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+    
+    res.json({ success: true, message: "Review deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting review:", error);
+    res.status(500).json({ error: "Error deleting review" });
+  }
 });
 
 module.exports = router;
