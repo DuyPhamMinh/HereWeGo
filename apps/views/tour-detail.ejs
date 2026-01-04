@@ -63,17 +63,27 @@
                             </div>
                             <div>
                                 <i class="fa fa-star text-warning me-2"></i>
-                                <strong>Đánh giá:</strong> <%= tour.rating || 5 %>/5
+                                <strong>Đánh giá:</strong> <%= typeof averageRating !== 'undefined' ? averageRating : (tour.rating || 5) %>/5
+                                <% if (typeof totalReviews !== 'undefined' && totalReviews > 0) { %>
+                                <span class="text-muted">(<%= totalReviews %> đánh giá)</span>
+                                <% } %>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <% for (let i = 0; i < Math.floor(tour.rating || 5); i++) { %>
+                            <% const displayRating = typeof averageRating !== 'undefined' ? parseFloat(averageRating) : (tour.rating || 5); %>
+                            <% for (let i = 0; i < Math.floor(displayRating); i++) { %>
                             <i class="fa fa-star text-warning"></i>
                             <% } %>
-                            <% for (let i = Math.floor(tour.rating || 5); i < 5; i++) { %>
-                            <i class="fa fa-star"></i>
+                            <% if (displayRating % 1 >= 0.5) { %>
+                            <i class="fa fa-star-half-alt text-warning"></i>
                             <% } %>
-                            <span class="ms-2 text-muted">(<%= tour.rating || 5 %>.0)</span>
+                            <% for (let i = Math.ceil(displayRating); i < 5; i++) { %>
+                            <i class="fa fa-star-o text-muted"></i>
+                            <% } %>
+                            <span class="ms-2 text-muted">(<%= displayRating %>)</span>
+                            <% if (typeof totalReviews !== 'undefined' && totalReviews > 0) { %>
+                            <span class="ms-2 text-muted">· <%= totalReviews %> đánh giá</span>
+                            <% } %>
                         </div>
                         <div>
                             <span class="badge bg-primary"><%= tour.category || 'Tour' %></span>
@@ -252,6 +262,95 @@
                                     <i class="fab fa-twitter me-2"></i>Twitter
                                 </button>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Reviews Section -->
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">
+                                <i class="fa fa-star text-warning me-2"></i>
+                                Đánh giá từ khách hàng
+                                <% if (typeof totalReviews !== 'undefined' && totalReviews > 0) { %>
+                                <span class="text-muted">(<%= totalReviews %> đánh giá)</span>
+                                <% } %>
+                            </h5>
+
+                            <% if (typeof totalReviews !== 'undefined' && totalReviews > 0) { %>
+                            <!-- Rating Summary -->
+                            <div class="row mb-4">
+                                <div class="col-md-4 text-center">
+                                    <h2 class="text-primary mb-0"><%= averageRating %></h2>
+                                    <div class="mb-2">
+                                        <% for (let i = 0; i < Math.floor(parseFloat(averageRating)); i++) { %>
+                                        <i class="fa fa-star text-warning"></i>
+                                        <% } %>
+                                        <% if (parseFloat(averageRating) % 1 >= 0.5) { %>
+                                        <i class="fa fa-star-half-alt text-warning"></i>
+                                        <% } %>
+                                        <% for (let i = Math.ceil(parseFloat(averageRating)); i < 5; i++) { %>
+                                        <i class="fa fa-star-o text-muted"></i>
+                                        <% } %>
+                                    </div>
+                                    <small class="text-muted">Dựa trên <%= totalReviews %> đánh giá</small>
+                                </div>
+                                <div class="col-md-8">
+                                    <!-- Rating Distribution -->
+                                    <% [5, 4, 3, 2, 1].forEach(function(rating) { %>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <small class="text-muted me-2" style="width: 30px;"><%= rating %> sao</small>
+                                        <div class="progress flex-fill me-2" style="height: 8px;">
+                                            <% const percentage = totalReviews > 0 ? (ratingDistribution[rating] / totalReviews * 100) : 0; %>
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: <%= percentage %>%"></div>
+                                        </div>
+                                        <small class="text-muted" style="width: 40px;"><%= ratingDistribution[rating] %></small>
+                                    </div>
+                                    <% }); %>
+                                </div>
+                            </div>
+                            <% } %>
+
+                            <!-- Reviews List -->
+                            <% if (typeof reviews !== 'undefined' && reviews && reviews.length > 0) { %>
+                            <div class="reviews-list">
+                                <% reviews.forEach(function(review) { %>
+                                <div class="border-bottom pb-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <strong>
+                                                <% if (review.user && review.user.firstName) { %>
+                                                <%= review.user.firstName %> <%= review.user.lastName || '' %>
+                                                <% } else { %>
+                                                Khách hàng
+                                                <% } %>
+                                            </strong>
+                                            <div class="rating-stars mt-1">
+                                                <% for (let i = 1; i <= 5; i++) { %>
+                                                    <% if (i <= (review.rating || 0)) { %>
+                                                        <i class="fa fa-star text-warning"></i>
+                                                    <% } else { %>
+                                                        <i class="fa fa-star-o text-muted"></i>
+                                                    <% } %>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">
+                                            <%= review.createdAt ? new Date(review.createdAt).toLocaleDateString('vi-VN') : '' %>
+                                        </small>
+                                    </div>
+                                    <% if (review.title && review.title.trim()) { %>
+                                    <h6 class="mb-2"><%= review.title %></h6>
+                                    <% } %>
+                                    <p class="mb-0 text-muted"><%= review.comment || '' %></p>
+                                </div>
+                                <% }); %>
+                            </div>
+                            <% } else { %>
+                            <div class="alert alert-info text-center">
+                                <i class="fa fa-info-circle me-2"></i>
+                                Chưa có đánh giá nào cho tour này.
+                            </div>
+                            <% } %>
                         </div>
                     </div>
                 </div>
