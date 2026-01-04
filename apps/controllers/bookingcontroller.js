@@ -351,7 +351,7 @@ router.post("/:id/review", isAuthenticated, async function (req, res) {
       existingReview.rating = rating;
       existingReview.title = sanitizedTitle.sanitized;
       existingReview.comment = sanitizedComment.sanitized;
-      existingReview.isApproved = false; // Reset approval status when updated
+      existingReview.isApproved = true; // Auto-approve when updated
       await existingReview.save();
 
       return res.json({
@@ -361,7 +361,7 @@ router.post("/:id/review", isAuthenticated, async function (req, res) {
       });
     }
 
-    // Create new review
+    // Create new review - Auto approve
     const review = new Review({
       booking: bookingId,
       tour: booking.tour,
@@ -369,7 +369,7 @@ router.post("/:id/review", isAuthenticated, async function (req, res) {
       rating: parseInt(rating),
       title: sanitizedTitle.sanitized,
       comment: sanitizedComment.sanitized,
-      isApproved: false,
+      isApproved: true, // Auto-approve reviews
       isActive: true,
     });
 
