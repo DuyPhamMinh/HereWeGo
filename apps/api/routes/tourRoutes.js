@@ -1,7 +1,9 @@
 var express = require("express");
 var router = express.Router();
-var Tour = require(global.__basedir + "/apps/model/Tour");
+var TourService = require(global.__basedir + "/apps/Services/TourService");
+var Tour = require(global.__basedir + "/apps/Entity/Tour");
 var verifyToken = require(global.__basedir + "/apps/Util/VerifyToken");
+var ObjectId = require('mongodb').ObjectId;
 
 // Public routes - Get all active tours
 router.get("/", async function (req, res) {
@@ -28,24 +30,19 @@ router.get("/", async function (req, res) {
             query.isFeatured = true;
         }
         
-        // Get total count
-        const totalTours = await Tour.countDocuments(query);
+        const skip = (page - 1) * limit;
+        const tourService = new TourService();
+        const result = await tourService.getTourList(skip, limit, query);
         
-        // Get tours with pagination
-        const tours = await Tour.find(query)
-            .sort({ createdAt: -1 })
-            .limit(limit)
-            .skip((page - 1) * limit);
-        
-        const totalPages = Math.ceil(totalTours / limit);
+        const totalPages = Math.ceil(result.total / limit);
         
         res.json({
             success: true,
-            data: tours,
+            data: result.data,
             pagination: {
                 currentPage: page,
                 totalPages: totalPages,
-                totalItems: totalTours,
+                totalItems: result.total,
                 itemsPerPage: limit
             }
         });
@@ -62,7 +59,9 @@ router.get("/", async function (req, res) {
 // Public route - Get single tour by ID
 router.get("/:id", async function (req, res) {
     try {
-        const tour = await Tour.findById(req.params.id);
+        const tourService = new TourService();
+        const tour = await tourService.getTour(req.params.id);
+        
         if (!tour) {
             return res.status(404).json({ 
                 success: false,
@@ -120,34 +119,37 @@ router.post("/", async function (req, res) {
             });
         }
         
-        // Create new tour
-        const newTour = new Tour({
-            title,
-            description,
-            shortDescription: shortDescription || description.substring(0, 150),
-            destination,
-            duration: parseInt(duration),
-            durationUnit: durationUnit || 'days',
-            maxPersons: maxPersons ? parseInt(maxPersons) : 10,
-            price: parseFloat(price),
-            discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
-            image: image || "/static/img/packages-1.jpg",
-            category: category || 'National',
-            rating: rating ? parseFloat(rating) : 5,
-            isActive: isActive !== false && isActive !== 'false',
-            isFeatured: isFeatured === true || isFeatured === 'true',
-            highlights: Array.isArray(highlights) ? highlights : (highlights ? highlights.split(',').map(h => h.trim()) : []),
-            includes: Array.isArray(includes) ? includes : (includes ? includes.split(',').map(i => i.trim()) : []),
-            excludes: Array.isArray(excludes) ? excludes : (excludes ? excludes.split(',').map(e => e.trim()) : []),
-            itinerary: Array.isArray(itinerary) ? itinerary : []
-        });
+        // Create new tour entity
+        const newTour = new Tour();
+        newTour.title = title;
+        newTour.description = description;
+        newTour.shortDescription = shortDescription || description.substring(0, 150);
+        newTour.destination = destination;
+        newTour.duration = parseInt(duration);
+        newTour.durationUnit = durationUnit || 'days';
+        newTour.maxPersons = maxPersons ? parseInt(maxPersons) : 10;
+        newTour.price = parseFloat(price);
+        newTour.discountPrice = discountPrice ? parseFloat(discountPrice) : undefined;
+        newTour.image = image || "/static/img/packages-1.jpg";
+        newTour.category = category || 'National';
+        newTour.rating = rating ? parseFloat(rating) : 5;
+        newTour.isActive = isActive !== false && isActive !== 'false';
+        newTour.isFeatured = isFeatured === true || isFeatured === 'true';
+        newTour.highlights = Array.isArray(highlights) ? highlights : (highlights ? highlights.split(',').map(h => h.trim()) : []);
+        newTour.includes = Array.isArray(includes) ? includes : (includes ? includes.split(',').map(i => i.trim()) : []);
+        newTour.excludes = Array.isArray(excludes) ? excludes : (excludes ? excludes.split(',').map(e => e.trim()) : []);
+        newTour.itinerary = Array.isArray(itinerary) ? itinerary : [];
         
-        await newTour.save();
+        const tourService = new TourService();
+        const result = await tourService.insertTour(newTour);
+        
+        // Get the created tour
+        const createdTour = await tourService.getTour(result.insertedId.toString());
         
         res.status(201).json({ 
             success: true, 
             message: "Tour created successfully",
-            data: newTour 
+            data: createdTour 
         });
     } catch (error) {
         console.error("Error creating tour:", error);
@@ -176,48 +178,62 @@ router.put("/:id", async function (req, res) {
             isFeatured, highlights, includes, excludes, itinerary 
         } = req.body;
         
-        const tour = await Tour.findById(req.params.id);
-        if (!tour) {
+        const tourService = new TourService();
+        const existingTour = await tourService.getTour(req.params.id);
+        
+        if (!existingTour) {
             return res.status(404).json({ 
                 success: false,
                 message: "Tour not found" 
             });
         }
         
-        // Update fields
-        if (title) tour.title = title;
-        if (description) tour.description = description;
-        if (shortDescription !== undefined) tour.shortDescription = shortDescription;
-        if (destination) tour.destination = destination;
-        if (duration) tour.duration = parseInt(duration);
-        if (durationUnit) tour.durationUnit = durationUnit;
-        if (maxPersons) tour.maxPersons = parseInt(maxPersons);
-        if (price) tour.price = parseFloat(price);
-        if (discountPrice !== undefined) tour.discountPrice = discountPrice ? parseFloat(discountPrice) : undefined;
-        if (image) tour.image = image;
-        if (category) tour.category = category;
-        if (rating) tour.rating = parseFloat(rating);
-        if (isActive !== undefined) tour.isActive = isActive !== false && isActive !== 'false';
-        if (isFeatured !== undefined) tour.isFeatured = isFeatured === true || isFeatured === 'true';
+        // Create tour entity with updated fields
+        const updatedTour = new Tour();
+        updatedTour._id = req.params.id;
+        if (title) updatedTour.title = title;
+        if (description) updatedTour.description = description;
+        if (shortDescription !== undefined) updatedTour.shortDescription = shortDescription;
+        if (destination) updatedTour.destination = destination;
+        if (duration) updatedTour.duration = parseInt(duration);
+        if (durationUnit) updatedTour.durationUnit = durationUnit;
+        if (maxPersons) updatedTour.maxPersons = parseInt(maxPersons);
+        if (price) updatedTour.price = parseFloat(price);
+        if (discountPrice !== undefined) updatedTour.discountPrice = discountPrice ? parseFloat(discountPrice) : undefined;
+        if (image) updatedTour.image = image;
+        if (category) updatedTour.category = category;
+        if (rating) updatedTour.rating = parseFloat(rating);
+        if (isActive !== undefined) updatedTour.isActive = isActive !== false && isActive !== 'false';
+        if (isFeatured !== undefined) updatedTour.isFeatured = isFeatured === true || isFeatured === 'true';
         if (highlights !== undefined) {
-            tour.highlights = Array.isArray(highlights) ? highlights : (highlights ? highlights.split(',').map(h => h.trim()) : []);
+            updatedTour.highlights = Array.isArray(highlights) ? highlights : (highlights ? highlights.split(',').map(h => h.trim()) : []);
         }
         if (includes !== undefined) {
-            tour.includes = Array.isArray(includes) ? includes : (includes ? includes.split(',').map(i => i.trim()) : []);
+            updatedTour.includes = Array.isArray(includes) ? includes : (includes ? includes.split(',').map(i => i.trim()) : []);
         }
         if (excludes !== undefined) {
-            tour.excludes = Array.isArray(excludes) ? excludes : (excludes ? excludes.split(',').map(e => e.trim()) : []);
+            updatedTour.excludes = Array.isArray(excludes) ? excludes : (excludes ? excludes.split(',').map(e => e.trim()) : []);
         }
         if (itinerary !== undefined) {
-            tour.itinerary = Array.isArray(itinerary) ? itinerary : [];
+            updatedTour.itinerary = Array.isArray(itinerary) ? itinerary : [];
         }
         
-        await tour.save();
+        // Merge with existing data
+        Object.keys(existingTour).forEach(key => {
+            if (updatedTour[key] === undefined && existingTour[key] !== undefined) {
+                updatedTour[key] = existingTour[key];
+            }
+        });
+        
+        await tourService.updateTour(updatedTour);
+        
+        // Get updated tour
+        const result = await tourService.getTour(req.params.id);
         
         res.json({ 
             success: true, 
             message: "Tour updated successfully",
-            data: tour 
+            data: result 
         });
     } catch (error) {
         console.error("Error updating tour:", error);
@@ -240,13 +256,17 @@ router.delete("/:id", async function (req, res) {
             });
         }
         
-        const tour = await Tour.findByIdAndDelete(req.params.id);
-        if (!tour) {
+        const tourService = new TourService();
+        const existingTour = await tourService.getTour(req.params.id);
+        
+        if (!existingTour) {
             return res.status(404).json({ 
                 success: false,
                 message: "Tour not found" 
             });
         }
+        
+        await tourService.deleteTour(req.params.id);
         
         res.json({ 
             success: true, 
