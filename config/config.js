@@ -59,11 +59,42 @@ function getSessionSecret() {
   return process.env.SESSION_SECRET || "default-session-secret-change-in-production";
 }
 
+// Get MongoDB Database Name
+function getMongoDBDatabase() {
+  // Try from environment variable first
+  if (process.env.MONGODB_DATABASE) {
+    return process.env.MONGODB_DATABASE;
+  }
+  
+  // Try from Setting.json
+  if (settingConfig.mongodb?.database) {
+    return settingConfig.mongodb.database;
+  }
+  
+  // Try to extract from URI
+  const uri = getMongoDBUri();
+  if (uri) {
+    try {
+      const urlParts = uri.split('/');
+      if (urlParts.length > 3) {
+        const dbPart = urlParts[urlParts.length - 1].split('?')[0];
+        if (dbPart) return dbPart;
+      }
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }
+  
+  // Default fallback
+  return "account";
+}
+
 // Export functions and computed values
 const config = {
   getJWTSecret,
   getJWTExpiresIn,
   getMongoDBUri,
+  getMongoDBDatabase,
   getSessionSecret,
 };
 
@@ -81,6 +112,7 @@ Object.defineProperty(config, 'mongodb', {
   get: function() {
     return {
       uri: getMongoDBUri(),
+      database: getMongoDBDatabase(),
     };
   }
 });
