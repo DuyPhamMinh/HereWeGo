@@ -3,19 +3,17 @@ var router = express.Router();
 var { isAuthenticated } = require(__dirname + "/../middleware/auth");
 var User = require(__dirname + "/../model/User");
 
-// Apply authentication middleware to all profile routes
 router.use(isAuthenticated);
 
-// Get profile page
 router.get("/", async function (req, res) {
   try {
     const userId = req.session.user.id;
     const user = await User.findById(userId).select('-password');
-    
+
     if (!user) {
       return res.redirect("/login");
     }
-    
+
     res.render("profile.ejs", {
       activePage: 'profile',
       user: user,
@@ -33,13 +31,11 @@ router.get("/", async function (req, res) {
   }
 });
 
-// Update profile
 router.post("/", async function (req, res) {
   try {
     const { firstName, lastName, email, phone, birthDate, newsletter } = req.body;
     const userId = req.session.user.id;
-    
-    // Validation
+
     if (!firstName || !lastName || !email) {
       return res.render("profile.ejs", {
         activePage: 'profile',
@@ -49,8 +45,7 @@ router.post("/", async function (req, res) {
         formData: req.body
       });
     }
-    
-    // Email validation
+
     const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     if (!emailRegex.test(email)) {
       return res.render("profile.ejs", {
@@ -61,9 +56,8 @@ router.post("/", async function (req, res) {
         formData: req.body
       });
     }
-    
-    // Check if email is already taken by another user
-    const existingUser = await User.findOne({ 
+
+    const existingUser = await User.findOne({
       email: email.toLowerCase(),
       _id: { $ne: userId }
     });
@@ -76,23 +70,21 @@ router.post("/", async function (req, res) {
         formData: req.body
       });
     }
-    
-    // Update user
+
     const user = await User.findById(userId);
     if (!user) {
       return res.redirect("/login");
     }
-    
+
     user.firstName = firstName;
     user.lastName = lastName;
     user.email = email.toLowerCase();
     user.phone = phone || undefined;
     user.birthDate = birthDate || undefined;
     user.newsletter = newsletter === 'on' || newsletter === true;
-    
+
     await user.save();
-    
-    // Update session
+
     req.session.user = {
       id: user._id,
       firstName: user.firstName,
@@ -100,7 +92,7 @@ router.post("/", async function (req, res) {
       email: user.email,
       role: user.role,
     };
-    
+
     res.render("profile.ejs", {
       activePage: 'profile',
       user: await User.findById(userId).select('-password'),
@@ -119,13 +111,11 @@ router.post("/", async function (req, res) {
   }
 });
 
-// Change password
 router.post("/change-password", async function (req, res) {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
     const userId = req.session.user.id;
-    
-    // Validation
+
     if (!currentPassword || !newPassword || !confirmPassword) {
       return res.render("profile.ejs", {
         activePage: 'profile',
@@ -134,7 +124,7 @@ router.post("/change-password", async function (req, res) {
         success: null
       });
     }
-    
+
     if (newPassword !== confirmPassword) {
       return res.render("profile.ejs", {
         activePage: 'profile',
@@ -143,7 +133,7 @@ router.post("/change-password", async function (req, res) {
         success: null
       });
     }
-    
+
     if (newPassword.length < 6) {
       return res.render("profile.ejs", {
         activePage: 'profile',
@@ -152,14 +142,12 @@ router.post("/change-password", async function (req, res) {
         success: null
       });
     }
-    
-    // Get user with password
+
     const user = await User.findById(userId);
     if (!user) {
       return res.redirect("/login");
     }
-    
-    // Verify current password
+
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
       return res.render("profile.ejs", {
@@ -169,11 +157,10 @@ router.post("/change-password", async function (req, res) {
         success: null
       });
     }
-    
-    // Update password
+
     user.password = newPassword;
     await user.save();
-    
+
     res.render("profile.ejs", {
       activePage: 'profile',
       user: await User.findById(userId).select('-password'),

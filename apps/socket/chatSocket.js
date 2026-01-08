@@ -2,13 +2,12 @@ const { Conversation, Message } = require(__dirname + "/../model/Chat");
 const User = require(__dirname + "/../model/User");
 
 module.exports = function (io) {
-  // Store user socket connections
-  const userSockets = new Map(); // userId -> socketId
+
+  const userSockets = new Map();
 
   io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    // Handle user joining (authenticate and store user info)
     socket.on("join", async (data) => {
       try {
         const { userId, conversationId } = data;
@@ -18,11 +17,9 @@ module.exports = function (io) {
           return;
         }
 
-        // Store user socket connection
         userSockets.set(userId, socket.id);
         socket.userId = userId;
 
-        // Join conversation room
         if (conversationId) {
           socket.join(`conversation:${conversationId}`);
           console.log(`User ${userId} joined conversation ${conversationId}`);
@@ -35,7 +32,6 @@ module.exports = function (io) {
       }
     });
 
-    // Handle sending message
     socket.on("send_message", async (data) => {
       try {
         const { conversationId, content, senderId } = data;
@@ -45,21 +41,18 @@ module.exports = function (io) {
           return;
         }
 
-        // Get user info
         const user = await User.findById(senderId);
         if (!user) {
           socket.emit("error", { message: "User not found" });
           return;
         }
 
-        // Get conversation
         const conversation = await Conversation.findById(conversationId);
         if (!conversation) {
           socket.emit("error", { message: "Conversation not found" });
           return;
         }
 
-        // Check if user is participant
         const isParticipant = conversation.participants.some(
           (p) => p.userId.toString() === senderId.toString()
         );
@@ -68,7 +61,6 @@ module.exports = function (io) {
           return;
         }
 
-        // Create message
         const message = new Message({
           conversationId: conversationId,
           senderId: senderId,
@@ -79,19 +71,15 @@ module.exports = function (io) {
 
         await message.save();
 
-        // Update conversation
         conversation.lastMessage = content;
         conversation.lastMessageAt = new Date();
-        
-        // Only increase unread count if message is not from admin
-        // Check if sender is admin
+
         const isAdmin = user.role === "admin";
         if (!isAdmin) {
           conversation.unreadCount = (conversation.unreadCount || 0) + 1;
         }
         await conversation.save();
 
-        // Prepare message data for clients
         const messageData = {
           _id: message._id,
           conversationId: message.conversationId,
@@ -103,12 +91,10 @@ module.exports = function (io) {
           updatedAt: message.updatedAt,
         };
 
-        // Emit to all users in the conversation room
         io.to(`conversation:${conversationId}`).emit("new_message", messageData);
 
-        // Also emit to update conversation list
         conversation.participants.forEach((participant) => {
-          // Handle both ObjectId and string userId
+
           const participantId = participant.userId.toString();
           const participantSocketId = userSockets.get(participantId);
           if (participantSocketId) {
@@ -128,7 +114,6 @@ module.exports = function (io) {
       }
     });
 
-    // Handle marking messages as read
     socket.on("mark_as_read", async (data) => {
       try {
         const { conversationId, userId } = data;
@@ -138,7 +123,6 @@ module.exports = function (io) {
           return;
         }
 
-        // Mark all unread messages in this conversation as read (except sender's own messages)
         await Message.updateMany(
           {
             conversationId: conversationId,
@@ -150,7 +134,6 @@ module.exports = function (io) {
           }
         );
 
-        // Update conversation unread count
         const conversation = await Conversation.findById(conversationId);
         if (conversation) {
           const unreadCount = await Message.countDocuments({
@@ -160,7 +143,6 @@ module.exports = function (io) {
           conversation.unreadCount = unreadCount;
           await conversation.save();
 
-          // Notify other participants
           conversation.participants.forEach((participant) => {
             const participantId = participant.userId.toString();
             const participantSocketId = userSockets.get(participantId);
@@ -180,7 +162,6 @@ module.exports = function (io) {
       }
     });
 
-    // Handle typing indicator
     socket.on("typing", (data) => {
       const { conversationId, userId, userName, isTyping } = data;
       if (conversationId) {
@@ -192,7 +173,6 @@ module.exports = function (io) {
       }
     });
 
-    // Handle disconnect
     socket.on("disconnect", () => {
       console.log("User disconnected:", socket.id);
       if (socket.userId) {

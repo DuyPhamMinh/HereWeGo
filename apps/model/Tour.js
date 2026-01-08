@@ -43,6 +43,9 @@ const tourSchema = new mongoose.Schema(
       type: String,
       default: "/static/img/packages-1.jpg",
     },
+    images: [{
+      type: String,
+    }],
     category: {
       type: String,
       trim: true,
@@ -64,8 +67,14 @@ const tourSchema = new mongoose.Schema(
         day: { type: Number },
         title: { type: String },
         description: { type: String },
+        places: [{ type: String }],
+        activities: [{ type: String }],
+        hotel: { type: String },
       },
     ],
+    availableDates: [{
+      type: Date,
+    }],
     rating: {
       type: Number,
       default: 5,
@@ -76,7 +85,6 @@ const tourSchema = new mongoose.Schema(
   }
 );
 
-// Add text index for search functionality
 tourSchema.index({ title: "text", description: "text", destination: "text", category: "text" });
 
 const Tour = mongoose.model("Tour", tourSchema);

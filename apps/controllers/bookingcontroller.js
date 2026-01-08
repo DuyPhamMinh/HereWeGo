@@ -8,7 +8,6 @@ var Review = require(__dirname + "/../model/Review");
 var vnpay = require(__dirname + "/../Util/vnpay");
 var { sanitizeText } = require(__dirname + "/../util/profanityFilter");
 
-// Get booking page with optional tour ID
 router.get("/", async function (req, res) {
   try {
     const tourId = req.query.tour;
@@ -24,9 +23,11 @@ router.get("/", async function (req, res) {
           user: req.session.user || null,
         });
       }
+      if (tour.availableDates && tour.availableDates.length > 0) {
+        tour.availableDates = tour.availableDates.filter(date => new Date(date) >= new Date()).sort((a, b) => new Date(a) - new Date(b));
+      }
     }
 
-    // Get all active tours for dropdown
     const tours = await Tour.find({ isActive: true })
       .select("title destination price discountPrice")
       .sort({ title: 1 });
@@ -52,7 +53,6 @@ router.get("/", async function (req, res) {
   }
 });
 
-// Create booking
 router.post("/", async function (req, res) {
   try {
     let {
@@ -65,17 +65,14 @@ router.post("/", async function (req, res) {
       specialRequest,
     } = req.body;
 
-    // Handle tourId if it's an array (shouldn't happen, but just in case)
     if (Array.isArray(tourId)) {
-      tourId = tourId[0]; // Take the first value
+      tourId = tourId[0];
     }
 
-    // Convert to string if it's an object
     if (tourId && typeof tourId === "object") {
       tourId = tourId.toString();
     }
 
-    // Validation
     if (!tourId) {
       return res.render("booking.ejs", {
         activePage: "booking",
@@ -90,7 +87,6 @@ router.post("/", async function (req, res) {
       });
     }
 
-    // Get tour
     const tour = await Tour.findById(tourId);
     if (!tour || !tour.isActive) {
       return res.render("booking.ejs", {
@@ -106,7 +102,6 @@ router.post("/", async function (req, res) {
       });
     }
 
-    // Validate booking date
     if (!bookingDate) {
       return res.render("booking.ejs", {
         activePage: "booking",
@@ -115,7 +110,21 @@ router.post("/", async function (req, res) {
           .select("title destination price discountPrice")
           .sort({ title: 1 }),
         user: req.session.user || null,
-        error: "Please select a booking date",
+        error: "Vui lòng chọn ngày khởi hành",
+        success: null,
+        formData: req.body,
+      });
+    }
+
+    if (!tour.availableDates || tour.availableDates.length === 0) {
+      return res.render("booking.ejs", {
+        activePage: "booking",
+        tour: tour,
+        tours: await Tour.find({ isActive: true })
+          .select("title destination price discountPrice")
+          .sort({ title: 1 }),
+        user: req.session.user || null,
+        error: "Tour này chưa có lịch khởi hành. Vui lòng liên hệ hotline để đặt tour.",
         success: null,
         formData: req.body,
       });
@@ -130,13 +139,30 @@ router.post("/", async function (req, res) {
           .select("title destination price discountPrice")
           .sort({ title: 1 }),
         user: req.session.user || null,
-        error: "Booking date cannot be in the past",
+        error: "Ngày đặt tour không thể là ngày trong quá khứ",
         success: null,
         formData: req.body,
       });
     }
 
-    // Validate number of persons
+    if (tour.availableDates && tour.availableDates.length > 0) {
+      const selectedDateStr = selectedDate.toISOString().split('T')[0];
+      const availableDateStrs = tour.availableDates.map(d => new Date(d).toISOString().split('T')[0]);
+      if (!availableDateStrs.includes(selectedDateStr)) {
+        return res.render("booking.ejs", {
+          activePage: "booking",
+          tour: tour,
+          tours: await Tour.find({ isActive: true })
+            .select("title destination price discountPrice")
+            .sort({ title: 1 }),
+          user: req.session.user || null,
+          error: "Ngày bạn chọn không có trong lịch khởi hành. Vui lòng chọn ngày khác.",
+          success: null,
+          formData: req.body,
+        });
+      }
+    }
+
     const persons = parseInt(numberOfPersons) || 1;
     if (persons < 1) {
       return res.render("booking.ejs", {
@@ -166,11 +192,9 @@ router.post("/", async function (req, res) {
       });
     }
 
-    // Calculate total price
     const pricePerPerson = tour.discountPrice || tour.price;
     const totalPrice = pricePerPerson * persons;
 
-    // Get user info
     let userId = null;
     let bookingGuestName = guestName;
     let bookingGuestEmail = guestEmail;
@@ -186,7 +210,7 @@ router.post("/", async function (req, res) {
         bookingGuestPhone = bookingGuestPhone || user.phone || "";
       }
     } else {
-      // For guest bookings, require name and email
+
       if (!bookingGuestName || !bookingGuestEmail) {
         return res.render("booking.ejs", {
           activePage: "booking",
@@ -202,7 +226,6 @@ router.post("/", async function (req, res) {
       }
     }
 
-    // Create booking
     const booking = new Booking({
       user: userId,
       tour: tourId,
@@ -219,7 +242,6 @@ router.post("/", async function (req, res) {
 
     await booking.save();
 
-    // Populate tour info for success message
     await booking.populate("tour", "title destination");
 
     res.render("booking.ejs", {
@@ -251,7 +273,6 @@ router.post("/", async function (req, res) {
   }
 });
 
-// Get user's bookings (requires authentication)
 router.get("/my-bookings", isAuthenticated, async function (req, res) {
   try {
     const userId = req.session.user.id;
@@ -262,7 +283,6 @@ router.get("/my-bookings", isAuthenticated, async function (req, res) {
       )
       .sort({ createdAt: -1 });
 
-    // Get reviews for each booking
     const bookingsWithReviews = await Promise.all(
       bookings.map(async (booking) => {
         const bookingObj = booking.toObject();
@@ -292,14 +312,12 @@ router.get("/my-bookings", isAuthenticated, async function (req, res) {
   }
 });
 
-// POST /booking/:id/review - Tạo đánh giá cho booking
 router.post("/:id/review", isAuthenticated, async function (req, res) {
   try {
     const bookingId = req.params.id;
     const userId = req.session.user.id;
     const { rating, title, comment } = req.body;
 
-    // Validation
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({ error: "Rating must be between 1 and 5" });
     }
@@ -308,50 +326,44 @@ router.post("/:id/review", isAuthenticated, async function (req, res) {
       return res.status(400).json({ error: "Comment is required" });
     }
 
-    // Get booking
     const booking = await Booking.findById(bookingId);
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
     }
 
-    // Check if booking belongs to user
     if (booking.user.toString() !== userId.toString()) {
       return res.status(403).json({ error: "You can only review your own bookings" });
     }
 
-    // Check if booking is completed or paid (user can only review completed/paid bookings)
     if (booking.status !== "completed" && booking.paymentStatus !== "paid") {
-      return res.status(400).json({ 
-        error: "You can only review completed or paid bookings" 
+      return res.status(400).json({
+        error: "You can only review completed or paid bookings"
       });
     }
 
-    // Check if review already exists
     const existingReview = await Review.findOne({
       booking: bookingId,
       user: userId,
     });
 
-    // Filter profanity from title and comment
     const titleText = title ? title.trim() : "";
     const commentText = comment.trim();
-    
+
     const sanitizedTitle = sanitizeText(titleText);
     const sanitizedComment = sanitizeText(commentText);
-    
-    // Check if profanity was found
+
     if (sanitizedTitle.hasProfanity || sanitizedComment.hasProfanity) {
-      return res.status(400).json({ 
-        error: "Đánh giá của bạn chứa từ ngữ không phù hợp. Vui lòng chỉnh sửa lại." 
+      return res.status(400).json({
+        error: "Đánh giá của bạn chứa từ ngữ không phù hợp. Vui lòng chỉnh sửa lại."
       });
     }
 
     if (existingReview) {
-      // Update existing review
+
       existingReview.rating = rating;
       existingReview.title = sanitizedTitle.sanitized;
       existingReview.comment = sanitizedComment.sanitized;
-      existingReview.isApproved = true; // Auto-approve when updated
+      existingReview.isApproved = true;
       await existingReview.save();
 
       return res.json({
@@ -361,7 +373,6 @@ router.post("/:id/review", isAuthenticated, async function (req, res) {
       });
     }
 
-    // Create new review - Auto approve
     const review = new Review({
       booking: bookingId,
       tour: booking.tour,
@@ -369,7 +380,7 @@ router.post("/:id/review", isAuthenticated, async function (req, res) {
       rating: parseInt(rating),
       title: sanitizedTitle.sanitized,
       comment: sanitizedComment.sanitized,
-      isApproved: true, // Auto-approve reviews
+      isApproved: true,
       isActive: true,
     });
 
@@ -383,14 +394,13 @@ router.post("/:id/review", isAuthenticated, async function (req, res) {
   } catch (error) {
     console.error("Error creating review:", error);
     if (error.code === 11000) {
-      // Duplicate key error
+
       return res.status(400).json({ error: "Bạn đã đánh giá booking này rồi" });
     }
     res.status(500).json({ error: "Có lỗi xảy ra khi tạo đánh giá" });
   }
 });
 
-// GET /booking/:id/review - Lấy đánh giá của booking
 router.get("/:id/review", isAuthenticated, async function (req, res) {
   try {
     const bookingId = req.params.id;
@@ -401,7 +411,6 @@ router.get("/:id/review", isAuthenticated, async function (req, res) {
       return res.status(404).json({ error: "Booking not found" });
     }
 
-    // Check if booking belongs to user
     if (booking.user.toString() !== userId.toString()) {
       return res.status(403).json({ error: "Access denied" });
     }
@@ -421,7 +430,6 @@ router.get("/:id/review", isAuthenticated, async function (req, res) {
   }
 });
 
-// View invoice for paid booking (requires authentication)
 router.get("/invoice/:id", isAuthenticated, async function (req, res) {
   try {
     const bookingId = req.params.id;
@@ -441,7 +449,6 @@ router.get("/invoice/:id", isAuthenticated, async function (req, res) {
       });
     }
 
-    // Check if user owns this booking
     const bookingUserId =
       booking.user && booking.user._id
         ? booking.user._id.toString()
@@ -455,7 +462,6 @@ router.get("/invoice/:id", isAuthenticated, async function (req, res) {
       });
     }
 
-    // Only show invoice for paid bookings
     if (booking.paymentStatus !== "paid") {
       return res.status(403).render("404.ejs", {
         activePage: "404",
@@ -477,7 +483,6 @@ router.get("/invoice/:id", isAuthenticated, async function (req, res) {
   }
 });
 
-// Create VNPay payment URL for a booking
 router.post("/:id/payment/vnpay", async function (req, res) {
   try {
     const bookingId = req.params.id;
@@ -493,7 +498,6 @@ router.post("/:id/payment/vnpay", async function (req, res) {
       });
     }
 
-    // Check if booking is already paid
     if (booking.paymentStatus === "paid") {
       return res.status(400).json({
         success: false,
@@ -501,21 +505,16 @@ router.post("/:id/payment/vnpay", async function (req, res) {
       });
     }
 
-    // Convert USD to VND
     const amountVnd = vnpay.usdToVnd(booking.totalPrice);
 
-    // Create order ID (using booking ID)
     const orderId = booking._id.toString();
 
-    // Create order description
     const orderDescription = `Thanh toan don dat tour: ${
       booking.tour.title || "Tour"
     }`;
 
-    // Get IP address
     const ipAddr = vnpay.getIpAddress(req);
 
-    // Create payment URL
     const paymentUrl = vnpay.createPaymentUrl({
       orderId: orderId,
       amount: amountVnd,
@@ -523,7 +522,6 @@ router.post("/:id/payment/vnpay", async function (req, res) {
       ipAddr: ipAddr,
     });
 
-    // Update booking with VNPay transaction info
     booking.vnpayTxnRef = orderId;
     booking.vnpayAmount = amountVnd;
     booking.paymentMethod = "vnpay";
@@ -544,12 +542,10 @@ router.post("/:id/payment/vnpay", async function (req, res) {
   }
 });
 
-// VNPay return URL (callback after payment)
 router.get("/vnpay-return", async function (req, res) {
   try {
     const vnp_Params = req.query;
 
-    // Verify signature
     const isValid = vnpay.verifyReturnUrl(vnp_Params);
 
     if (!isValid) {
@@ -562,13 +558,11 @@ router.get("/vnpay-return", async function (req, res) {
       });
     }
 
-    // Get booking ID from vnp_TxnRef
     const bookingId = vnp_Params["vnp_TxnRef"];
     const responseCode = vnp_Params["vnp_ResponseCode"];
     const transactionNo = vnp_Params["vnp_TransactionNo"];
-    const amount = parseInt(vnp_Params["vnp_Amount"]) / 100; // VNPay trả về số tiền nhân 100
+    const amount = parseInt(vnp_Params["vnp_Amount"]) / 100;
 
-    // Find booking
     const booking = await Booking.findById(bookingId).populate(
       "tour",
       "title destination"
@@ -584,13 +578,10 @@ router.get("/vnpay-return", async function (req, res) {
       });
     }
 
-    // Update booking with VNPay response
     booking.vnpayResponseCode = responseCode;
     booking.vnpayTransactionNo = transactionNo;
     booking.vnpayTransactionId = transactionNo;
 
-    // Check payment result
-    // Response code '00' means success
     if (responseCode === "00") {
       booking.paymentStatus = "paid";
       booking.status = "confirmed";
@@ -606,7 +597,7 @@ router.get("/vnpay-return", async function (req, res) {
         user: req.session.user || null,
       });
     } else {
-      // Payment failed
+
       booking.paymentStatus = "pending";
       await booking.save();
 

@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-// Message Schema
 const messageSchema = new mongoose.Schema(
   {
     conversationId: {
@@ -32,7 +31,6 @@ const messageSchema = new mongoose.Schema(
   }
 );
 
-// Conversation Schema
 const conversationSchema = new mongoose.Schema(
   {
     participants: [
@@ -74,7 +72,6 @@ const conversationSchema = new mongoose.Schema(
   }
 );
 
-// Index for faster queries
 conversationSchema.index({ "participants.userId": 1 });
 conversationSchema.index({ lastMessageAt: -1 });
 messageSchema.index({ conversationId: 1, createdAt: -1 });
@@ -83,6 +80,4 @@ const Conversation = mongoose.model("Conversation", conversationSchema);
 const Message = mongoose.model("Message", messageSchema);
 
 module.exports = { Conversation, Message };
-
-
 

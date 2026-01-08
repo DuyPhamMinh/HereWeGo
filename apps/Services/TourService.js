@@ -31,7 +31,7 @@ class TourService {
     async insertTour(tour, category = null) {
         try {
             await this.connect();
-            
+
             var categoryResult = null;
             if (category) {
                 categoryResult = await this.categoryRepository.insertCategory(category);

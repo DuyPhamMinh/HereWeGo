@@ -6,7 +6,7 @@ class Category {
     updatedAt;
 
     constructor() {
-        
+
     }
 }
 
