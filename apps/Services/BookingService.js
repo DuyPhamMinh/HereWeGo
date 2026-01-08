@@ -31,8 +31,7 @@ class BookingService {
     async insertBooking(booking) {
         try {
             await this.connect();
-            
-            // Verify tour exists
+
             if (booking.tour) {
                 const tour = await this.tourRepository.getTour(booking.tour.toString());
                 if (!tour) {

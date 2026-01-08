@@ -5,14 +5,14 @@ const bookingSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      // Not required - allows guest bookings
+
     },
     tour: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tour",
       required: [true, "Tour is required"],
     },
-    // Guest information (for non-logged-in users or additional guests)
+
     guestName: {
       type: String,
       trim: true,
@@ -26,7 +26,7 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    // Booking details
+
     bookingDate: {
       type: Date,
       required: [true, "Booking date is required"],
@@ -59,7 +59,7 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       enum: ["cash", "card", "bank_transfer", "online", "vnpay"],
     },
-    // VNPay transaction information
+
     vnpayTransactionId: {
       type: String,
       trim: true,
@@ -89,7 +89,6 @@ const bookingSchema = new mongoose.Schema(
   }
 );
 
-// Index for efficient queries
 bookingSchema.index({ user: 1, createdAt: -1 });
 bookingSchema.index({ tour: 1 });
 bookingSchema.index({ status: 1 });

@@ -36,7 +36,7 @@ const reviewSchema = new mongoose.Schema(
     },
     isApproved: {
       type: Boolean,
-      default: false, // Admin cần duyệt trước khi hiển thị công khai
+      default: false,
     },
     isActive: {
       type: Boolean,
@@ -48,14 +48,12 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
-// Index for efficient queries
 reviewSchema.index({ booking: 1 });
 reviewSchema.index({ tour: 1 });
 reviewSchema.index({ user: 1 });
 reviewSchema.index({ isApproved: 1, isActive: 1 });
 reviewSchema.index({ createdAt: -1 });
 
-// Prevent duplicate reviews for the same booking
 reviewSchema.index({ booking: 1, user: 1 }, { unique: true });
 
 const Review = mongoose.model("Review", reviewSchema);

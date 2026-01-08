@@ -37,21 +37,59 @@
             <div class="row g-5">
                 <!-- Main Content -->
                 <div class="col-lg-8">
-                    <!-- Tour Image -->
+                    <!-- Tour Images Gallery -->
                     <div class="mb-4">
-                        <img src="<%= tour.image || '/static/img/packages-1.jpg' %>" 
-                             class="img-fluid w-100 rounded" 
-                             alt="<%= tour.title %>"
-                             style="max-height: 500px; object-fit: cover;">
+                        <% const allImages = tour.images && tour.images.length > 0 ? tour.images : (tour.image ? [tour.image] : ['/static/img/packages-1.jpg']); %>
+                        <div class="row g-2">
+                            <div class="col-12 position-relative">
+                                <img src="<%= allImages[0] %>" 
+                                     class="img-fluid w-100 rounded" 
+                                     alt="<%= tour.title %>"
+                                     id="mainTourImage"
+                                     style="max-height: 500px; object-fit: cover; cursor: pointer; display: block;"
+                                     onclick="openImageModal(0)">
+                            </div>
+                            <% if (allImages.length > 1) { %>
+                            <div class="col-12">
+                                <div class="row g-2">
+                                    <% allImages.slice(1, 5).forEach(function(img, idx) { %>
+                                    <div class="col-3">
+                                        <img src="<%= img %>" 
+                                             class="img-fluid w-100 rounded" 
+                                             alt="<%= tour.title %>"
+                                             style="height: 120px; object-fit: cover; cursor: pointer;"
+                                             onclick="changeMainImage('<%= img %>', <%= idx + 1 %>)"
+                                             onmouseover="this.style.opacity='0.8'" 
+                                             onmouseout="this.style.opacity='1'">
+                                    </div>
+                                    <% }); %>
+                                    <% if (allImages.length > 5) { %>
+                                    <div class="col-3 position-relative">
+                                        <img src="<%= allImages[4] %>" 
+                                             class="img-fluid w-100 rounded" 
+                                             alt="<%= tour.title %>"
+                                             style="height: 120px; object-fit: cover; cursor: pointer; filter: brightness(0.5);"
+                                             onclick="openImageModal(4)">
+                                        <div class="position-absolute top-50 start-50 translate-middle text-white fw-bold">
+                                            +<%= allImages.length - 5 %> ảnh
+                                        </div>
+                                    </div>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <% } %>
+                        </div>
                     </div>
 
                     <!-- Tour Title and Info -->
                     <div class="mb-4">
                         <h1 class="mb-3"><%= tour.title %></h1>
                         <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
-                            <div>
+                            <div class="d-flex align-items-center">
                                 <i class="fa fa-map-marker-alt text-primary me-2"></i>
-                                <strong>Điểm đến:</strong> <%= tour.destination %>
+                                <div>
+                                    <strong>Điểm đến:</strong> <span style="white-space: nowrap;"><%= tour.destination %></span>
+                                </div>
                             </div>
                             <div>
                                 <i class="fa fa-calendar-alt text-primary me-2"></i>
@@ -182,7 +220,57 @@
                                 </h2>
                                 <div id="collapse<%= index %>" class="accordion-collapse collapse <%= index === 0 ? 'show' : '' %>" data-bs-parent="#itineraryAccordion">
                                     <div class="accordion-body">
-                                        <%= day.description ? day.description.replace(/\n/g, '<br>') : 'Chưa có mô tả chi tiết.' %>
+                                        <% if (day.description) { %>
+                                        <p class="mb-3"><%= day.description.replace(/\n/g, '<br>') %></p>
+                                        <% } %>
+                                        
+                                        <% if (day.places && day.places.length > 0) { %>
+                                        <div class="mb-3">
+                                            <h6 class="text-primary mb-2">
+                                                <i class="fa fa-map-marker-alt me-2"></i>Địa điểm tham quan:
+                                            </h6>
+                                            <ul class="list-unstyled ms-3">
+                                                <% day.places.forEach(function(place) { %>
+                                                <li class="mb-1">
+                                                    <i class="fa fa-check-circle text-success me-2"></i>
+                                                    <%= place %>
+                                                </li>
+                                                <% }); %>
+                                            </ul>
+                                        </div>
+                                        <% } %>
+                                        
+                                        <% if (day.activities && day.activities.length > 0) { %>
+                                        <div class="mb-3">
+                                            <h6 class="text-primary mb-2">
+                                                <i class="fa fa-tasks me-2"></i>Hoạt động:
+                                            </h6>
+                                            <ul class="list-unstyled ms-3">
+                                                <% day.activities.forEach(function(activity) { %>
+                                                <li class="mb-1">
+                                                    <i class="fa fa-check-circle text-info me-2"></i>
+                                                    <%= activity %>
+                                                </li>
+                                                <% }); %>
+                                            </ul>
+                                        </div>
+                                        <% } %>
+                                        
+                                        <% if (day.hotel) { %>
+                                        <div class="mb-2">
+                                            <h6 class="text-primary mb-2">
+                                                <i class="fa fa-hotel me-2"></i>Khách sạn:
+                                            </h6>
+                                            <p class="ms-3 mb-0">
+                                                <i class="fa fa-bed text-warning me-2"></i>
+                                                <%= day.hotel %>
+                                            </p>
+                                        </div>
+                                        <% } %>
+                                        
+                                        <% if (!day.description && (!day.places || day.places.length === 0) && (!day.activities || day.activities.length === 0) && !day.hotel) { %>
+                                        <p class="text-muted mb-0">Chưa có mô tả chi tiết.</p>
+                                        <% } %>
                                     </div>
                                 </div>
                             </div>
@@ -231,7 +319,7 @@
                                 </div>
                                 <div class="d-flex justify-content-between">
                                     <span><i class="fa fa-map-marker-alt text-primary me-2"></i>Điểm đến:</span>
-                                    <strong><%= tour.destination %></strong>
+                                    <strong class="text-end"><%= tour.destination %></strong>
                                 </div>
                             </div>
 
@@ -364,11 +452,11 @@
                     <% relatedTours.forEach(function(relatedTour) { %>
                     <div class="col-md-4">
                         <div class="packages-item">
-                            <div class="packages-img">
+                            <div class="packages-img position-relative">
                                 <img src="<%= relatedTour.image || '/static/img/packages-1.jpg' %>" 
                                      class="img-fluid w-100 rounded-top" 
                                      alt="<%= relatedTour.title %>">
-                                <div class="packages-info d-flex border border-start-0 border-end-0 position-absolute" style="width: 100%; bottom: 0; left: 0; z-index: 5;">
+                                <div class="packages-info d-flex border border-start-0 border-end-0 position-absolute" style="width: 100%; bottom: 0; left: 0; z-index: 5; background: rgba(255, 255, 255, 0.95);">
                                     <small class="flex-fill text-center border-end py-2">
                                         <i class="fa fa-map-marker-alt me-2"></i><%= relatedTour.destination %>
                                     </small>
@@ -419,7 +507,68 @@
 
     <%- include('partical/footer'); %>
 
+    <div class="modal fade" id="imageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-0">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0 text-center">
+                    <img id="modalImage" src="" class="img-fluid" alt="<%= tour.title %>" style="max-height: 80vh;">
+                </div>
+                <div class="modal-footer border-0 justify-content-between">
+                    <button type="button" class="btn btn-outline-light" id="prevImageBtn" onclick="navigateImage(-1)">
+                        <i class="fa fa-chevron-left me-2"></i>Ảnh trước
+                    </button>
+                    <span class="text-white" id="imageCounter"></span>
+                    <button type="button" class="btn btn-outline-light" id="nextImageBtn" onclick="navigateImage(1)">
+                        Ảnh sau<i class="fa fa-chevron-right ms-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const allImages = [
+            <% const allImagesForJS = tour.images && tour.images.length > 0 ? tour.images : (tour.image ? [tour.image] : ['/static/img/packages-1.jpg']); %>
+            <% allImagesForJS.forEach(function(img, idx) { %>
+            '<%= img %>'<%= idx < allImagesForJS.length - 1 ? ',' : '' %>
+            <% }); %>
+        ];
+        let currentImageIndex = 0;
+
+        function changeMainImage(imgSrc, index) {
+            document.getElementById('mainTourImage').src = imgSrc;
+            currentImageIndex = index;
+        }
+
+        function openImageModal(index) {
+            currentImageIndex = index;
+            const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+            updateModalImage();
+            modal.show();
+        }
+
+        function updateModalImage() {
+            document.getElementById('modalImage').src = allImages[currentImageIndex];
+            document.getElementById('imageCounter').textContent = `${currentImageIndex + 1} / ${allImages.length}`;
+            document.getElementById('prevImageBtn').disabled = currentImageIndex === 0;
+            document.getElementById('nextImageBtn').disabled = currentImageIndex === allImages.length - 1;
+        }
+
+        function navigateImage(direction) {
+            currentImageIndex += direction;
+            if (currentImageIndex < 0) currentImageIndex = 0;
+            if (currentImageIndex >= allImages.length) currentImageIndex = allImages.length - 1;
+            updateModalImage();
+        }
+
+        document.getElementById('imageModal')?.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') navigateImage(-1);
+            if (e.key === 'ArrowRight') navigateImage(1);
+        });
+
         function shareOnFacebook() {
             const url = encodeURIComponent(window.location.href);
             window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');

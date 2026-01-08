@@ -5,15 +5,14 @@ const { ensureDefaultAdmin } = require(__dirname + "/../apps/util/defaultAdmin")
 const connectDB = async () => {
   try {
     const mongoUri = config.mongodb.uri;
-    
+
     if (!mongoUri) {
       throw new Error("MONGODB_URI is not defined in environment variables or config");
     }
-    
+
     const conn = await mongoose.connect(mongoUri);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
-    
-    // Đảm bảo có admin mặc định
+
     await ensureDefaultAdmin();
   } catch (error) {
     console.error("Error connecting to MongoDB:", error.message);

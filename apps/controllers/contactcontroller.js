@@ -5,4 +5,3 @@ router.get("/", function (req, res) {
   res.render("contact.ejs");
 });
 module.exports = router;
-

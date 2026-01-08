@@ -16,7 +16,6 @@ router.post("/", async function (req, res) {
   try {
     const { email, password, remember } = req.body;
 
-    // Validation
     if (!email || !password) {
       return res.render("login.ejs", {
         error: "Please provide both email and password",
@@ -24,7 +23,6 @@ router.post("/", async function (req, res) {
       });
     }
 
-    // Email format validation
     const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     if (!emailRegex.test(email)) {
       return res.render("login.ejs", {
@@ -33,7 +31,6 @@ router.post("/", async function (req, res) {
       });
     }
 
-    // Find user
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.render("login.ejs", {
@@ -42,7 +39,6 @@ router.post("/", async function (req, res) {
       });
     }
 
-    // Check if account is locked
     if (user.isActive === false) {
       return res.render("login.ejs", {
         error: "Your account has been locked. Please contact administrator.",
@@ -50,7 +46,6 @@ router.post("/", async function (req, res) {
       });
     }
 
-    // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.render("login.ejs", {
@@ -59,7 +54,6 @@ router.post("/", async function (req, res) {
       });
     }
 
-    // Set session
     req.session.user = {
       id: user._id,
       firstName: user.firstName,
@@ -68,12 +62,10 @@ router.post("/", async function (req, res) {
       role: user.role,
     };
 
-    // Set cookie expiration if remember me is checked
     if (remember) {
-      req.session.cookie.maxAge = 1000 * 60 * 60 * 24 * 7; // 7 days
+      req.session.cookie.maxAge = 1000 * 60 * 60 * 24 * 7;
     }
 
-    // Redirect admin to admin dashboard, regular users to home
     if (user.role === 'admin') {
       res.redirect("/admin");
     } else {

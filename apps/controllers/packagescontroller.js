@@ -8,8 +8,7 @@ router.get("/", async function (req, res) {
     const limit = 12;
     const search = req.query.search || '';
     const category = req.query.category || '';
-    
-    // Build query
+
     let query = { isActive: true };
     if (search) {
       query.$or = [
@@ -21,21 +20,18 @@ router.get("/", async function (req, res) {
     if (category) {
       query.category = category;
     }
-    
-    // Get total count
+
     const totalTours = await Tour.countDocuments(query);
-    
-    // Get tours with pagination
+
     const tours = await Tour.find(query)
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit);
-    
+
     const totalPages = Math.ceil(totalTours / limit);
-    
-    // Get all categories for filter
+
     const categories = await Tour.distinct('category', { isActive: true });
-    
+
     res.render("packages.ejs", {
       tours: tours,
       currentPage: page,

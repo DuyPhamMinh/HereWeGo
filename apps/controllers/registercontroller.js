@@ -26,7 +26,6 @@ router.post("/", async function (req, res) {
       newsletter,
     } = req.body;
 
-    // Validation
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
       return res.render("register.ejs", {
         error: "All required fields must be filled",
@@ -35,7 +34,6 @@ router.post("/", async function (req, res) {
       });
     }
 
-    // Email validation
     const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     if (!emailRegex.test(email)) {
       return res.render("register.ejs", {
@@ -69,7 +67,6 @@ router.post("/", async function (req, res) {
       });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.render("register.ejs", {
@@ -79,7 +76,6 @@ router.post("/", async function (req, res) {
       });
     }
 
-    // Create new user
     const newUser = new User({
       firstName,
       lastName,
@@ -92,7 +88,6 @@ router.post("/", async function (req, res) {
 
     await newUser.save();
 
-    // Set session
     req.session.user = {
       id: newUser._id,
       firstName: newUser.firstName,
@@ -101,7 +96,6 @@ router.post("/", async function (req, res) {
       role: newUser.role,
     };
 
-    // Redirect admin to admin dashboard, regular users to home
     if (newUser.role === 'admin') {
       res.redirect("/admin");
     } else {
