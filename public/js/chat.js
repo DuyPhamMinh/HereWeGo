@@ -1,13 +1,12 @@
-// Chat functionality with Socket.IO
+
 let socket = null;
 let currentConversationId = null;
 let currentUserId = null;
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Initialize Socket.IO
+
   initializeSocket();
 
-  // Select conversation item
   const conversationItems = document.querySelectorAll(".conversation-item");
   conversationItems.forEach((item) => {
     item.addEventListener("click", function () {
@@ -18,17 +17,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Create conversation button - DISABLED (chỉ chat với admin mặc định)
-  // const createButtons = document.querySelectorAll(
-  //   "#createConversationBtn, #createFirstConversationBtn, #createConversationEmptyBtn"
-  // );
-  // createButtons.forEach((btn) => {
-  //   btn.addEventListener("click", function () {
-  //     createConversation();
-  //   });
-  // });
-
-  // Send message
   const sendMessageBtn = document.getElementById("sendMessageBtn");
   const messageInput = document.getElementById("messageInput");
 
@@ -43,7 +31,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    // Typing indicator
     let typingTimeout;
     messageInput.addEventListener("input", function () {
       if (currentConversationId && socket) {
@@ -69,13 +56,11 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Auto scroll to bottom of messages
   const chatMessages = document.getElementById("chatMessages");
   if (chatMessages) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
-  // Get current conversation ID from URL
   const pathParts = window.location.pathname.split("/");
   const conversationId = pathParts[pathParts.length - 1];
   if (conversationId && conversationId !== "chat") {
@@ -83,9 +68,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-// Initialize Socket.IO connection
 function initializeSocket() {
-  // Get user ID from page
+
   const chatMain = document.querySelector('.chat-main[data-user-id]');
   currentUserId = chatMain ? chatMain.getAttribute('data-user-id') : null;
 
@@ -94,13 +78,11 @@ function initializeSocket() {
     return;
   }
 
-  // Connect to Socket.IO server
   socket = io();
 
-  // Join chat
   socket.on("connect", () => {
     console.log("Connected to chat server");
-    
+
     if (currentConversationId) {
       socket.emit("join", {
         userId: currentUserId,
@@ -113,7 +95,6 @@ function initializeSocket() {
     }
   });
 
-  // Handle new message
   socket.on("new_message", (messageData) => {
     if (messageData.conversationId === currentConversationId) {
       const isOwnMessage = messageData.senderId.toString() === currentUserId.toString();
@@ -121,13 +102,11 @@ function initializeSocket() {
     }
   });
 
-  // Handle conversation update
   socket.on("conversation_updated", (data) => {
-    // Update conversation list if needed
+
     updateConversationInList(data);
   });
 
-  // Handle typing indicator
   socket.on("user_typing", (data) => {
     if (data.userId !== currentUserId && data.isTyping) {
       showTypingIndicator(data.userName);
@@ -136,25 +115,21 @@ function initializeSocket() {
     }
   });
 
-  // Handle errors
   socket.on("error", (error) => {
     console.error("Socket error:", error);
     alert("Có lỗi xảy ra: " + (error.message || "Unknown error"));
   });
 
-  // Handle disconnect
   socket.on("disconnect", () => {
     console.log("Disconnected from chat server");
   });
 }
 
-// Get current user name
 function getCurrentUserName() {
   const chatMain = document.querySelector('.chat-main[data-user-name]');
   return chatMain ? chatMain.getAttribute('data-user-name') : 'User';
 }
 
-// Create new conversation
 function createConversation() {
   fetch("/chat/create", {
     method: "POST",
@@ -165,7 +140,7 @@ function createConversation() {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        // Redirect to the new conversation
+
         window.location.href = "/chat/" + data.conversationId;
       } else {
         alert("Có lỗi xảy ra khi tạo hội thoại: " + (data.error || "Unknown error"));
@@ -177,7 +152,6 @@ function createConversation() {
     });
 }
 
-// Send message via Socket.IO
 function sendMessage() {
   const messageInput = document.getElementById("messageInput");
   const message = messageInput.value.trim();
@@ -192,22 +166,19 @@ function sendMessage() {
   }
 
   if (!socket || !socket.connected) {
-    // Fallback to REST API if socket not connected
+
     sendMessageViaAPI(message);
     return;
   }
 
-  // Send via Socket.IO
   socket.emit("send_message", {
     conversationId: currentConversationId,
     content: message,
     senderId: currentUserId,
   });
 
-  // Clear input
   messageInput.value = "";
 
-  // Stop typing indicator
   if (socket) {
     socket.emit("typing", {
       conversationId: currentConversationId,
@@ -218,7 +189,6 @@ function sendMessage() {
   }
 }
 
-// Fallback: Send message via REST API
 function sendMessageViaAPI(message) {
   fetch("/chat/send", {
     method: "POST",
@@ -233,7 +203,7 @@ function sendMessageViaAPI(message) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        // Message will be added via socket or reload
+
         location.reload();
       } else {
         alert("Có lỗi xảy ra khi gửi tin nhắn: " + (data.error || "Unknown error"));
@@ -245,18 +215,15 @@ function sendMessageViaAPI(message) {
     });
 }
 
-// Add message to UI (helper function)
 function addMessageToUI(messageData, isOwnMessage) {
   const chatMessages = document.getElementById("chatMessages");
   if (!chatMessages) return;
 
-  // Remove no-messages div if exists
   const noMessages = chatMessages.querySelector(".no-messages");
   if (noMessages) {
     noMessages.remove();
   }
 
-  // Check if message already exists (prevent duplicates)
   const existingMessage = chatMessages.querySelector(`[data-message-id="${messageData._id}"]`);
   if (existingMessage) {
     return;
@@ -286,10 +253,8 @@ function addMessageToUI(messageData, isOwnMessage) {
   messageWrapper.appendChild(messageBubble);
   chatMessages.appendChild(messageWrapper);
 
-  // Scroll to bottom
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
-  // Mark as read if it's not our message
   if (!isOwnMessage && socket && socket.connected) {
     socket.emit("mark_as_read", {
       conversationId: currentConversationId,
@@ -298,19 +263,17 @@ function addMessageToUI(messageData, isOwnMessage) {
   }
 }
 
-// Update conversation in list
 function updateConversationInList(data) {
   const conversationItem = document.querySelector(
     `[data-conversation-id="${data.conversationId}"]`
   );
   if (conversationItem) {
-    // Update last message preview
+
     const preview = conversationItem.querySelector(".conversation-preview");
     if (preview && data.lastMessage) {
       preview.textContent = data.lastMessage;
     }
 
-    // Update unread count
     const unreadBadge = conversationItem.querySelector(".conversation-unread");
     if (data.unreadCount > 0) {
       if (unreadBadge) {
@@ -330,13 +293,11 @@ function updateConversationInList(data) {
   }
 }
 
-// Show typing indicator
 let typingIndicator = null;
 function showTypingIndicator(userName) {
   const chatMessages = document.getElementById("chatMessages");
   if (!chatMessages) return;
 
-  // Remove existing indicator
   hideTypingIndicator();
 
   typingIndicator = document.createElement("div");
@@ -353,12 +314,10 @@ function showTypingIndicator(userName) {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// Hide typing indicator
 function hideTypingIndicator() {
   if (typingIndicator) {
     typingIndicator.remove();
     typingIndicator = null;
   }
 }
-
 

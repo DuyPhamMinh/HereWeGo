@@ -28,8 +28,7 @@ class UserService {
     async insertUser(user) {
         try {
             await this.connect();
-            
-            // Hash password if provided
+
             if (user.password) {
                 const salt = await bcrypt.genSalt(10);
                 user.password = await bcrypt.hash(user.password, salt);
@@ -69,8 +68,7 @@ class UserService {
     async updateUser(user) {
         try {
             await this.connect();
-            
-            // Hash password if provided and changed
+
             if (user.password) {
                 const salt = await bcrypt.genSalt(10);
                 user.password = await bcrypt.hash(user.password, salt);

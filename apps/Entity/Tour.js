@@ -10,6 +10,7 @@ class Tour {
     price;
     discountPrice;
     image;
+    images;
     category;
     isActive;
     isFeatured;
@@ -17,6 +18,7 @@ class Tour {
     includes;
     excludes;
     itinerary;
+    availableDates;
     rating;
     createdAt;
     updatedAt;
@@ -26,6 +28,8 @@ class Tour {
         this.includes = [];
         this.excludes = [];
         this.itinerary = [];
+        this.images = [];
+        this.availableDates = [];
         this.isActive = true;
         this.isFeatured = false;
         this.rating = 5;

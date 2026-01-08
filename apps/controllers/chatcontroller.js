@@ -3,7 +3,6 @@ var router = express.Router();
 const { Conversation, Message } = require(__dirname + "/../model/Chat");
 const User = require(__dirname + "/../model/User");
 
-// Middleware to check authentication
 const requireAuth = (req, res, next) => {
   if (!req.session.user) {
     return res.redirect("/login");
@@ -11,12 +10,10 @@ const requireAuth = (req, res, next) => {
   next();
 };
 
-// GET /chat - Hiển thị trang chat với danh sách hội thoại
 router.get("/", requireAuth, async (req, res) => {
   try {
     const userId = req.session.user.id;
-    
-    // Lấy danh sách hội thoại của user
+
     let conversations = await Conversation.find({
       "participants.userId": userId,
       isActive: true,
@@ -24,13 +21,12 @@ router.get("/", requireAuth, async (req, res) => {
       .sort({ lastMessageAt: -1 })
       .limit(20);
 
-    // Nếu chưa có hội thoại nào, tự động tạo hội thoại với admin và tin nhắn chào
     if (conversations.length === 0) {
       const user = await User.findById(userId);
       const adminUser = await User.findOne({ role: "admin" });
 
       if (user && adminUser) {
-        // Tạo hội thoại mới
+
         const conversation = new Conversation({
           participants: [
             {
@@ -51,7 +47,6 @@ router.get("/", requireAuth, async (req, res) => {
 
         await conversation.save();
 
-        // Tạo tin nhắn chào từ admin
         const welcomeMessage = new Message({
           conversationId: conversation._id,
           senderId: adminUser._id,
@@ -62,7 +57,6 @@ router.get("/", requireAuth, async (req, res) => {
 
         await welcomeMessage.save();
 
-        // Lấy lại danh sách hội thoại
         conversations = await Conversation.find({
           "participants.userId": userId,
           isActive: true,
@@ -70,7 +64,6 @@ router.get("/", requireAuth, async (req, res) => {
           .sort({ lastMessageAt: -1 })
           .limit(20);
 
-        // Nếu vừa tạo hội thoại mới, tự động mở hội thoại đó
         if (conversations.length > 0) {
           const messages = await Message.find({ conversationId: conversation._id })
             .sort({ createdAt: 1 })
@@ -87,7 +80,6 @@ router.get("/", requireAuth, async (req, res) => {
       }
     }
 
-    // Nếu chỉ có 1 hội thoại, tự động mở
     if (conversations.length === 1) {
       const conversation = conversations[0];
       const messages = await Message.find({ conversationId: conversation._id })
@@ -121,13 +113,11 @@ router.get("/", requireAuth, async (req, res) => {
   }
 });
 
-// GET /chat/:conversationId - Hiển thị tin nhắn của một hội thoại
 router.get("/:conversationId", requireAuth, async (req, res) => {
   try {
     const userId = req.session.user.id;
     const conversationId = req.params.conversationId;
 
-    // Lấy danh sách hội thoại
     const conversations = await Conversation.find({
       "participants.userId": userId,
       isActive: true,
@@ -135,13 +125,11 @@ router.get("/:conversationId", requireAuth, async (req, res) => {
       .sort({ lastMessageAt: -1 })
       .limit(20);
 
-    // Lấy hội thoại
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
       return res.redirect("/chat");
     }
 
-    // Kiểm tra user có trong hội thoại không
     const isParticipant = conversation.participants.some(
       (p) => p.userId.toString() === userId.toString()
     );
@@ -149,7 +137,6 @@ router.get("/:conversationId", requireAuth, async (req, res) => {
       return res.redirect("/chat");
     }
 
-    // Lấy tin nhắn
     const messages = await Message.find({ conversationId: conversationId })
       .sort({ createdAt: 1 })
       .limit(100);
@@ -167,15 +154,13 @@ router.get("/:conversationId", requireAuth, async (req, res) => {
   }
 });
 
-// POST /chat/create - Tạo hội thoại mới (DISABLED - Chỉ chat với admin mặc định)
 router.post("/create", requireAuth, async (req, res) => {
-  // Không cho phép tạo hội thoại mới, chỉ sử dụng hội thoại với admin mặc định
-  return res.status(403).json({ 
-    error: "Không thể tạo hội thoại mới. Chỉ có thể chat với admin mặc định." 
+
+  return res.status(403).json({
+    error: "Không thể tạo hội thoại mới. Chỉ có thể chat với admin mặc định."
   });
 });
 
-// POST /chat/send - Gửi tin nhắn (REST API fallback)
 router.post("/send", requireAuth, async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -195,7 +180,6 @@ router.post("/send", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Conversation not found" });
     }
 
-    // Check if user is participant
     const isParticipant = conversation.participants.some(
       (p) => p.userId.toString() === userId.toString()
     );
@@ -203,7 +187,6 @@ router.post("/send", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "You are not a participant" });
     }
 
-    // Create message
     const message = new Message({
       conversationId: conversationId,
       senderId: userId,
@@ -214,7 +197,6 @@ router.post("/send", requireAuth, async (req, res) => {
 
     await message.save();
 
-    // Update conversation
     conversation.lastMessage = content;
     conversation.lastMessageAt = new Date();
     conversation.unreadCount = (conversation.unreadCount || 0) + 1;

@@ -1,8 +1,7 @@
-// Admin Dashboard JavaScript
 
-// Initialize charts
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Sales Chart
+
     const salesCtx = document.getElementById('salesChart');
     if (salesCtx) {
         new Chart(salesCtx, {
@@ -35,7 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Sidebar toggle for mobile
 document.addEventListener('DOMContentLoaded', function() {
     const sidebarToggle = document.querySelector('[data-bs-target="#sidebarMenu"]');
     if (sidebarToggle) {
@@ -45,5 +43,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
 

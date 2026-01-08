@@ -157,11 +157,30 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <input type="date" class="form-control bg-white border-0" id="bookingDate" name="bookingDate" 
-                                               min="<%= new Date().toISOString().split('T')[0] %>"
-                                               value="<%= typeof formData !== 'undefined' && formData.bookingDate ? formData.bookingDate : '' %>"
-                                               required>
-                                        <label for="bookingDate">Booking Date <span class="text-danger">*</span></label>
+                                        <% if (typeof tour !== 'undefined' && tour && tour.availableDates && tour.availableDates.length > 0) { %>
+                                        <select class="form-select bg-white border-0" id="bookingDate" name="bookingDate" required>
+                                            <option value="">Chọn ngày khởi hành</option>
+                                            <% tour.availableDates.forEach(function(date) { %>
+                                            <option value="<%= new Date(date).toISOString().split('T')[0] %>"
+                                                    <%= typeof formData !== 'undefined' && formData.bookingDate === new Date(date).toISOString().split('T')[0] ? 'selected' : '' %>>
+                                                <%= new Date(date).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %>
+                                            </option>
+                                            <% }); %>
+                                        </select>
+                                        <label for="bookingDate">Ngày khởi hành <span class="text-danger">*</span></label>
+                                        <small class="text-muted d-block mt-1">
+                                            <i class="fa fa-info-circle me-1"></i>Chỉ có thể chọn các ngày khởi hành có sẵn
+                                        </small>
+                                        <% } else { %>
+                                        <select class="form-select bg-white border-0" id="bookingDate" name="bookingDate" disabled>
+                                            <option value="">Chưa có lịch khởi hành</option>
+                                        </select>
+                                        <label for="bookingDate">Ngày khởi hành <span class="text-danger">*</span></label>
+                                        <div class="alert alert-warning mt-2 mb-0">
+                                            <i class="fa fa-exclamation-triangle me-2"></i>
+                                            Tour này chưa có lịch khởi hành. Vui lòng liên hệ hotline <strong>+84 123 456 789</strong> để đặt tour.
+                                        </div>
+                                        <% } %>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -238,6 +257,16 @@
                 <% } %>
             };
 
+            const tourAvailableDates = {
+                <% if (typeof tour !== 'undefined' && tour && tour.availableDates && tour.availableDates.length > 0) { %>
+                    '<%= tour._id %>': [
+                        <% tour.availableDates.forEach(function(date, idx) { %>
+                        '<%= new Date(date).toISOString().split('T')[0] %>'<%= idx < tour.availableDates.length - 1 ? ',' : '' %>
+                        <% }); %>
+                    ]
+                <% } %>
+            };
+
             // Update price when tour or persons change
             function updatePrice() {
                 const tourId = document.getElementById('tourSelect').value;
@@ -265,9 +294,107 @@
                 }
             }
 
-            // Update price when tour select changes
+            async function updateDateSelector(tourId) {
+                const dateContainer = document.getElementById('bookingDate')?.parentElement;
+                if (!dateContainer) return;
+
+                if (!tourId) {
+                    const select = document.getElementById('bookingDate');
+                    if (select && select.tagName === 'SELECT') {
+                        select.innerHTML = '<option value="">Chọn tour trước</option>';
+                    }
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/tours/${tourId}`);
+                    if (response.ok) {
+                        const result = await response.json();
+                        const tour = result.data || result;
+                        
+                        if (tour.availableDates && tour.availableDates.length > 0) {
+                            const futureDates = tour.availableDates
+                                .map(d => new Date(d))
+                                .filter(d => d >= new Date())
+                                .sort((a, b) => a - b);
+                            
+                            const select = document.createElement('select');
+                            select.className = 'form-select bg-white border-0';
+                            select.id = 'bookingDate';
+                            select.name = 'bookingDate';
+                            select.required = true;
+                            
+                            if (futureDates.length > 0) {
+                                select.innerHTML = '<option value="">Chọn ngày khởi hành</option>';
+                                futureDates.forEach(date => {
+                                    const option = document.createElement('option');
+                                    option.value = date.toISOString().split('T')[0];
+                                    option.textContent = date.toLocaleDateString('vi-VN', { 
+                                        weekday: 'long', 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                    });
+                                    select.appendChild(option);
+                                });
+                                
+                                const smallInfo = document.createElement('small');
+                                smallInfo.className = 'text-muted d-block mt-1';
+                                smallInfo.innerHTML = '<i class="fa fa-info-circle me-1"></i>Chỉ có thể chọn các ngày khởi hành có sẵn';
+                                dateContainer.appendChild(smallInfo);
+                            } else {
+                                select.innerHTML = '<option value="">Không có ngày khởi hành</option>';
+                                select.disabled = true;
+                                
+                                const alertDiv = document.createElement('div');
+                                alertDiv.className = 'alert alert-warning mt-2 mb-0';
+                                alertDiv.innerHTML = '<i class="fa fa-exclamation-triangle me-2"></i>Tour này chưa có lịch khởi hành. Vui lòng liên hệ hotline <strong>+84 123 456 789</strong> để đặt tour.';
+                                dateContainer.appendChild(alertDiv);
+                            }
+                            
+                            const oldElement = document.getElementById('bookingDate');
+                            const label = dateContainer.querySelector('label');
+                            if (oldElement) {
+                                dateContainer.replaceChild(select, oldElement);
+                            } else {
+                                dateContainer.appendChild(select);
+                            }
+                            if (label) {
+                                label.innerHTML = 'Ngày khởi hành <span class="text-danger">*</span>';
+                            }
+                        } else {
+                            const select = document.createElement('select');
+                            select.className = 'form-select bg-white border-0';
+                            select.id = 'bookingDate';
+                            select.name = 'bookingDate';
+                            select.disabled = true;
+                            select.innerHTML = '<option value="">Chưa có lịch khởi hành</option>';
+                            
+                            const oldElement = document.getElementById('bookingDate');
+                            const label = dateContainer.querySelector('label');
+                            if (oldElement) {
+                                dateContainer.replaceChild(select, oldElement);
+                            } else {
+                                dateContainer.appendChild(select);
+                            }
+                            if (label) {
+                                label.innerHTML = 'Ngày khởi hành <span class="text-danger">*</span>';
+                            }
+                            
+                            const alertDiv = document.createElement('div');
+                            alertDiv.className = 'alert alert-warning mt-2 mb-0';
+                            alertDiv.innerHTML = '<i class="fa fa-exclamation-triangle me-2"></i>Tour này chưa có lịch khởi hành. Vui lòng liên hệ hotline <strong>+84 123 456 789</strong> để đặt tour.';
+                            dateContainer.appendChild(alertDiv);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching tour dates:', error);
+                }
+            }
+
             document.getElementById('tourSelect')?.addEventListener('change', function() {
                 updatePrice();
+                updateDateSelector(this.value);
             });
 
             // Update price when number of persons changes
@@ -281,9 +408,17 @@
             // Form validation
             document.getElementById('bookingForm')?.addEventListener('submit', function(e) {
                 const tourId = document.getElementById('tourSelect').value;
+                const bookingDate = document.getElementById('bookingDate');
+                
                 if (!tourId) {
                     e.preventDefault();
-                    alert('Please select a tour');
+                    alert('Vui lòng chọn tour');
+                    return false;
+                }
+                
+                if (!bookingDate || !bookingDate.value || bookingDate.disabled) {
+                    e.preventDefault();
+                    alert('Vui lòng chọn ngày khởi hành. Tour này chỉ có thể đặt các ngày do admin tạo.');
                     return false;
                 }
             });

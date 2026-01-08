@@ -265,6 +265,54 @@
                                 <input type="text" class="form-control" id="addImage" name="image" placeholder="/static/img/packages-1.jpg">
                                 <small class="form-text text-muted">Default: /static/img/packages-1.jpg</small>
                             </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Additional Images (one URL per line)</label>
+                            <textarea class="form-control" id="addImages" name="images" rows="3" placeholder="/static/img/gallery-1.jpg&#10;/static/img/gallery-2.jpg"></textarea>
+                            <small class="form-text text-muted">Enter image URLs, one per line</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Available Dates (one date per line, format: YYYY-MM-DD)</label>
+                            <textarea class="form-control" id="addAvailableDates" name="availableDates" rows="3" placeholder="2024-12-25&#10;2025-01-15&#10;2025-02-20"></textarea>
+                            <small class="form-text text-muted">Enter dates in YYYY-MM-DD format, one per line</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Itinerary</label>
+                            <div id="addItineraryContainer">
+                                <div class="itinerary-item border p-3 mb-2 rounded">
+                                    <div class="row">
+                                        <div class="col-md-2 mb-2">
+                                            <label class="form-label small">Day</label>
+                                            <input type="number" class="form-control form-control-sm" name="itinerary[0][day]" min="1" value="1">
+                                        </div>
+                                        <div class="col-md-10 mb-2">
+                                            <label class="form-label small">Title</label>
+                                            <input type="text" class="form-control form-control-sm" name="itinerary[0][title]" placeholder="Day title">
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Description</label>
+                                        <textarea class="form-control form-control-sm" name="itinerary[0][description]" rows="2" placeholder="Day description"></textarea>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Places (comma-separated)</label>
+                                        <input type="text" class="form-control form-control-sm" name="itinerary[0][places]" placeholder="Place 1, Place 2">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Activities (comma-separated)</label>
+                                        <input type="text" class="form-control form-control-sm" name="itinerary[0][activities]" placeholder="Activity 1, Activity 2">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Hotel</label>
+                                        <input type="text" class="form-control form-control-sm" name="itinerary[0][hotel]" placeholder="Hotel name">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addItineraryItem('add')">
+                                <i class="fa fa-plus me-1"></i>Add Day
+                            </button>
+                        </div>
+                        <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Category</label>
                                 <select class="form-select" id="addCategory" name="category">
@@ -400,6 +448,23 @@
                                 <input type="number" class="form-control" id="editRating" name="rating" step="0.1" min="0" max="5">
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Additional Images (one URL per line)</label>
+                            <textarea class="form-control" id="editImages" name="images" rows="3" placeholder="/static/img/gallery-1.jpg&#10;/static/img/gallery-2.jpg"></textarea>
+                            <small class="form-text text-muted">Enter image URLs, one per line</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Available Dates (one date per line, format: YYYY-MM-DD)</label>
+                            <textarea class="form-control" id="editAvailableDates" name="availableDates" rows="3" placeholder="2024-12-25&#10;2025-01-15&#10;2025-02-20"></textarea>
+                            <small class="form-text text-muted">Enter dates in YYYY-MM-DD format, one per line</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Itinerary</label>
+                            <div id="editItineraryContainer"></div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addItineraryItem('edit')">
+                                <i class="fa fa-plus me-1"></i>Add Day
+                            </button>
+                        </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="form-check">
@@ -450,115 +515,6 @@
             modal.show();
         }
 
-        // Submit Add Tour Form
-        document.getElementById('addTourForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
-            
-            // Convert checkboxes
-            data.isActive = document.getElementById('addIsActive').checked;
-            data.isFeatured = document.getElementById('addIsFeatured').checked;
-            
-            try {
-                const response = await fetch('/admin/tours', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    console.error('Non-JSON response:', text);
-                    alert('Error: Server returned an invalid response.');
-                    return;
-                }
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('Tour created successfully!');
-                    bootstrap.Modal.getInstance(document.getElementById('addTourModal')).hide();
-                    location.reload();
-                } else {
-                    alert('Error: ' + (result.error || 'Failed to create tour'));
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error: ' + error.message);
-            }
-        });
-
-        // Edit Tour
-        async function editTour(tourId) {
-            try {
-                const response = await fetch(`/admin/tours/${tourId}`);
-                const tour = await response.json();
-                
-                document.getElementById('editTourId').value = tour._id;
-                document.getElementById('editTitle').value = tour.title;
-                document.getElementById('editDestination').value = tour.destination;
-                document.getElementById('editDescription').value = tour.description;
-                document.getElementById('editShortDescription').value = tour.shortDescription || '';
-                document.getElementById('editDuration').value = tour.duration;
-                document.getElementById('editDurationUnit').value = tour.durationUnit || 'days';
-                document.getElementById('editMaxPersons').value = tour.maxPersons || 2;
-                document.getElementById('editPrice').value = tour.price;
-                document.getElementById('editDiscountPrice').value = tour.discountPrice || '';
-                document.getElementById('editImage').value = tour.image || '';
-                document.getElementById('editCategory').value = tour.category || 'other';
-                document.getElementById('editRating').value = tour.rating || 5;
-                document.getElementById('editIsActive').checked = tour.isActive !== false;
-                document.getElementById('editIsFeatured').checked = tour.isFeatured || false;
-                document.getElementById('editHighlights').value = Array.isArray(tour.highlights) ? tour.highlights.join(', ') : '';
-                document.getElementById('editIncludes').value = Array.isArray(tour.includes) ? tour.includes.join(', ') : '';
-                document.getElementById('editExcludes').value = Array.isArray(tour.excludes) ? tour.excludes.join(', ') : '';
-                
-                const modal = new bootstrap.Modal(document.getElementById('editTourModal'));
-                modal.show();
-            } catch (error) {
-                alert('Error loading tour: ' + error.message);
-            }
-        }
-
-        // Submit Edit Form
-        document.getElementById('editTourForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const tourId = document.getElementById('editTourId').value;
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
-            
-            // Convert checkboxes
-            data.isActive = document.getElementById('editIsActive').checked;
-            data.isFeatured = document.getElementById('editIsFeatured').checked;
-            
-            try {
-                const response = await fetch(`/admin/tours/${tourId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('Tour updated successfully!');
-                    bootstrap.Modal.getInstance(document.getElementById('editTourModal')).hide();
-                    location.reload();
-                } else {
-                    alert('Error: ' + (result.error || 'Failed to update tour'));
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        });
 
         // Toggle Status
         async function toggleStatus(tourId, currentStatus, tourTitle) {
@@ -650,6 +606,282 @@
                 alert('Error: ' + error.message);
             }
         }
+
+        let itineraryIndex = {
+            add: 1,
+            edit: 0
+        };
+
+        function addItineraryItem(mode) {
+            const container = document.getElementById(`${mode}ItineraryContainer`);
+            const index = itineraryIndex[mode]++;
+            
+            const item = document.createElement('div');
+            item.className = 'itinerary-item border p-3 mb-2 rounded';
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Day ${index + 1}</strong>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItineraryItem(this, '${mode}')">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <div class="row">
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label small">Day</label>
+                        <input type="number" class="form-control form-control-sm" name="itinerary[${index}][day]" min="1" value="${index + 1}">
+                    </div>
+                    <div class="col-md-10 mb-2">
+                        <label class="form-label small">Title</label>
+                        <input type="text" class="form-control form-control-sm" name="itinerary[${index}][title]" placeholder="Day title">
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small">Description</label>
+                    <textarea class="form-control form-control-sm" name="itinerary[${index}][description]" rows="2" placeholder="Day description"></textarea>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small">Places (comma-separated)</label>
+                    <input type="text" class="form-control form-control-sm" name="itinerary[${index}][places]" placeholder="Place 1, Place 2">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small">Activities (comma-separated)</label>
+                    <input type="text" class="form-control form-control-sm" name="itinerary[${index}][activities]" placeholder="Activity 1, Activity 2">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small">Hotel</label>
+                    <input type="text" class="form-control form-control-sm" name="itinerary[${index}][hotel]" placeholder="Hotel name">
+                </div>
+            `;
+            container.appendChild(item);
+        }
+
+        function removeItineraryItem(btn, mode) {
+            btn.closest('.itinerary-item').remove();
+        }
+
+        function processFormData(data, mode) {
+            const imagesText = document.getElementById(`${mode}Images`)?.value || '';
+            if (imagesText.trim()) {
+                data.images = imagesText.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0);
+            } else {
+                data.images = [];
+            }
+
+            const datesText = document.getElementById(`${mode}AvailableDates`)?.value || '';
+            if (datesText.trim()) {
+                data.availableDates = datesText.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0)
+                    .map(dateStr => {
+                        const date = new Date(dateStr);
+                        return isNaN(date.getTime()) ? null : date.toISOString();
+                    })
+                    .filter(date => date !== null);
+            } else {
+                data.availableDates = [];
+            }
+
+            const form = document.getElementById(`${mode}TourForm`);
+            const formData = new FormData(form);
+            const itinerary = [];
+            let dayIndex = 0;
+            
+            while (true) {
+                const day = formData.get(`itinerary[${dayIndex}][day]`);
+                if (!day) break;
+                
+                const dayItem = {
+                    day: parseInt(day),
+                    title: formData.get(`itinerary[${dayIndex}][title]`) || '',
+                    description: formData.get(`itinerary[${dayIndex}][description]`) || '',
+                    hotel: formData.get(`itinerary[${dayIndex}][hotel]`) || ''
+                };
+                
+                const places = formData.get(`itinerary[${dayIndex}][places]`);
+                if (places) {
+                    dayItem.places = places.split(',').map(p => p.trim()).filter(p => p);
+                }
+                
+                const activities = formData.get(`itinerary[${dayIndex}][activities]`);
+                if (activities) {
+                    dayItem.activities = activities.split(',').map(a => a.trim()).filter(a => a);
+                }
+                
+                itinerary.push(dayItem);
+                dayIndex++;
+            }
+            
+            data.itinerary = itinerary;
+            return data;
+        }
+
+        document.getElementById('addTourForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            let data = Object.fromEntries(formData);
+            data = processFormData(data, 'add');
+            data.isActive = document.getElementById('addIsActive').checked;
+            data.isFeatured = document.getElementById('addIsFeatured').checked;
+            
+            try {
+                const response = await fetch('/admin/tours', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
+                    alert('Error: Server returned an invalid response.');
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Tour created successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('addTourModal')).hide();
+                    location.reload();
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to create tour'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+            }
+        });
+
+        async function editTour(tourId) {
+            try {
+                const response = await fetch(`/admin/tours/${tourId}`);
+                const tour = await response.json();
+                
+                document.getElementById('editTourId').value = tour._id;
+                document.getElementById('editTitle').value = tour.title;
+                document.getElementById('editDestination').value = tour.destination;
+                document.getElementById('editDescription').value = tour.description;
+                document.getElementById('editShortDescription').value = tour.shortDescription || '';
+                document.getElementById('editDuration').value = tour.duration;
+                document.getElementById('editDurationUnit').value = tour.durationUnit || 'days';
+                document.getElementById('editMaxPersons').value = tour.maxPersons || 2;
+                document.getElementById('editPrice').value = tour.price;
+                document.getElementById('editDiscountPrice').value = tour.discountPrice || '';
+                document.getElementById('editImage').value = tour.image || '';
+                document.getElementById('editCategory').value = tour.category || 'other';
+                document.getElementById('editRating').value = tour.rating || 5;
+                document.getElementById('editIsActive').checked = tour.isActive !== false;
+                document.getElementById('editIsFeatured').checked = tour.isFeatured || false;
+                document.getElementById('editHighlights').value = Array.isArray(tour.highlights) ? tour.highlights.join(', ') : '';
+                document.getElementById('editIncludes').value = Array.isArray(tour.includes) ? tour.includes.join(', ') : '';
+                document.getElementById('editExcludes').value = Array.isArray(tour.excludes) ? tour.excludes.join(', ') : '';
+                
+                if (tour.images && tour.images.length > 0) {
+                    document.getElementById('editImages').value = tour.images.join('\n');
+                } else {
+                    document.getElementById('editImages').value = '';
+                }
+                
+                if (tour.availableDates && tour.availableDates.length > 0) {
+                    document.getElementById('editAvailableDates').value = tour.availableDates
+                        .map(d => new Date(d).toISOString().split('T')[0])
+                        .join('\n');
+                } else {
+                    document.getElementById('editAvailableDates').value = '';
+                }
+                
+                const itineraryContainer = document.getElementById('editItineraryContainer');
+                itineraryContainer.innerHTML = '';
+                itineraryIndex.edit = 0;
+                
+                if (tour.itinerary && tour.itinerary.length > 0) {
+                    tour.itinerary.forEach((day, idx) => {
+                        const item = document.createElement('div');
+                        item.className = 'itinerary-item border p-3 mb-2 rounded';
+                        item.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Day ${day.day || (idx + 1)}</strong>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItineraryItem(this, 'edit')">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-2 mb-2">
+                                    <label class="form-label small">Day</label>
+                                    <input type="number" class="form-control form-control-sm" name="itinerary[${idx}][day]" min="1" value="${day.day || (idx + 1)}">
+                                </div>
+                                <div class="col-md-10 mb-2">
+                                    <label class="form-label small">Title</label>
+                                    <input type="text" class="form-control form-control-sm" name="itinerary[${idx}][title]" value="${day.title || ''}" placeholder="Day title">
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small">Description</label>
+                                <textarea class="form-control form-control-sm" name="itinerary[${idx}][description]" rows="2" placeholder="Day description">${day.description || ''}</textarea>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small">Places (comma-separated)</label>
+                                <input type="text" class="form-control form-control-sm" name="itinerary[${idx}][places]" value="${Array.isArray(day.places) ? day.places.join(', ') : ''}" placeholder="Place 1, Place 2">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small">Activities (comma-separated)</label>
+                                <input type="text" class="form-control form-control-sm" name="itinerary[${idx}][activities]" value="${Array.isArray(day.activities) ? day.activities.join(', ') : ''}" placeholder="Activity 1, Activity 2">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small">Hotel</label>
+                                <input type="text" class="form-control form-control-sm" name="itinerary[${idx}][hotel]" value="${day.hotel || ''}" placeholder="Hotel name">
+                            </div>
+                        `;
+                        itineraryContainer.appendChild(item);
+                        itineraryIndex.edit = idx + 1;
+                    });
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('editTourModal'));
+                modal.show();
+            } catch (error) {
+                alert('Error loading tour: ' + error.message);
+            }
+        }
+
+        document.getElementById('editTourForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const tourId = document.getElementById('editTourId').value;
+            const formData = new FormData(this);
+            let data = Object.fromEntries(formData);
+            data = processFormData(data, 'edit');
+            data.isActive = document.getElementById('editIsActive').checked;
+            data.isFeatured = document.getElementById('editIsFeatured').checked;
+            
+            try {
+                const response = await fetch(`/admin/tours/${tourId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Tour updated successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('editTourModal')).hide();
+                    location.reload();
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to update tour'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
     </script>
 </body>
 

@@ -1,22 +1,20 @@
 var express = require("express");
 var router = express.Router();
 
-// Main routes
 router.get("/", async function (req, res) {
   try {
     const Tour = require(__dirname + "/../model/Tour");
-    // Get featured tours for homepage
+
     const featuredTours = await Tour.find({ isActive: true, isFeatured: true })
       .sort({ createdAt: -1 })
       .limit(6);
-    
-    // If no featured tours, get active tours
-    const tours = featuredTours.length > 0 
-      ? featuredTours 
+
+    const tours = featuredTours.length > 0
+      ? featuredTours
       : await Tour.find({ isActive: true })
           .sort({ createdAt: -1 })
           .limit(6);
-    
+
     res.render("index.ejs", { tours: tours });
   } catch (error) {
     console.error("Error loading tours:", error);
@@ -24,7 +22,6 @@ router.get("/", async function (req, res) {
   }
 });
 
-// Page routes
 router.use("/about", require(__dirname + "/aboutcontroller"));
 router.use("/services", require(__dirname + "/servicecontroller"));
 router.use("/packages", require(__dirname + "/packagescontroller"));
